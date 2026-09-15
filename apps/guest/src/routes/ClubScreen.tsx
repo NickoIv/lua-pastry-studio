@@ -11,12 +11,14 @@ import {
   Skeleton,
 } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
+import { API_ERROR_MESSAGES_RU } from "@lua/types";
+import { ApiRequestError } from "@lua/data-server";
 import {
   useLoyaltyAccount,
   useLoyaltyTransactions,
   useRequestRedemption,
   useRewards,
-} from "../backend/hooks";
+} from "../data/hooks";
 import "./ClubScreen.css";
 
 export function ClubScreen() {
@@ -29,7 +31,8 @@ export function ClubScreen() {
   const [pendingRewardId, setPendingRewardId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const balance = account.status === "success" ? account.data.pointsBalance : null;
+  const balance =
+    account.status === "success" && account.data ? account.data.pointsBalance : null;
 
   async function handleRedeem(rewardId: string, pointsCost: number) {
     if (balance !== null && balance < pointsCost) {
@@ -39,15 +42,21 @@ export function ClubScreen() {
     setError(null);
     setPendingRewardId(rewardId);
     try {
-      const { redemption, token } = await requestRedemption(rewardId);
+      const { redemption, token, expiresAt } = await requestRedemption(rewardId);
       navigate("/qr", {
         state: {
           mode: "reward",
           redemptionId: redemption.id,
-          encodedToken: token.encoded,
-          expiresAt: token.expiresAt,
+          encodedToken: token,
+          expiresAt,
         },
       });
+    } catch (err) {
+      setError(
+        err instanceof ApiRequestError
+          ? API_ERROR_MESSAGES_RU[err.code]
+          : t("common.error"),
+      );
     } finally {
       setPendingRewardId(null);
     }
@@ -58,7 +67,7 @@ export function ClubScreen() {
       <AppHeader title={t("guest.club.title")} />
 
       <Card className="lua-club__balance-card">
-        {account.status === "success" ? (
+        {account.status === "success" && account.data ? (
           <>
             <p className="lua-club__balance">
               <Points value={account.data.pointsBalance} locale={locale} />

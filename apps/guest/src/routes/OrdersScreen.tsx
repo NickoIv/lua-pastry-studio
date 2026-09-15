@@ -11,7 +11,7 @@ import {
 } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
 import { formatOrderDateTime } from "@lua/utils";
-import { useOrders } from "../backend/hooks";
+import { useOrders } from "../data/hooks";
 import "./OrdersScreen.css";
 
 export function OrdersScreen() {

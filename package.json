@@ -11,12 +11,22 @@
     "dev:guest": "pnpm --filter @lua/guest dev",
     "dev:staff": "pnpm --filter @lua/staff dev",
     "dev:admin": "pnpm --filter @lua/admin dev",
+    "dev:server": "pnpm --filter @lua/server dev",
+    "db:start": "bash infra/db/scripts/start.sh",
+    "db:stop": "bash infra/db/scripts/stop.sh",
+    "db:migrate": "bash infra/db/scripts/migrate.sh",
+    "db:seed": "bash infra/db/scripts/seed.sh",
+    "db:wipe": "bash infra/db/scripts/wipe.sh",
+    "db:reset": "bash infra/db/scripts/reset.sh",
     "build": "pnpm -r run typecheck && pnpm -r --filter=./apps/* build",
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "pnpm -r --filter=./packages/* test:run"
+    "test": "pnpm -r --filter=./packages/domain --filter=./packages/utils test:run",
+    "test:server": "pnpm db:start && pnpm db:migrate && pnpm db:seed && pnpm --filter @lua/server test:run",
+    "test:all": "pnpm test && pnpm test:server",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test:all && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",

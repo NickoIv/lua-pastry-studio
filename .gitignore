@@ -14,3 +14,12 @@ coverage
 .turbo
 *.tsbuildinfo
 .vite
+
+# Local dev Postgres cluster — never committed, always recreated via
+# `pnpm db:reset`.
+infra/db/pgdata
+infra/db/postgres.log
+infra/db/sockets
+
+# Server-only secrets — never committed, see packages/server/.env.example.
+packages/server/.env

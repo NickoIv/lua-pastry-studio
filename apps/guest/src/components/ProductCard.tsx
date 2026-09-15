@@ -1,9 +1,9 @@
-import type { Product } from "@lua/types";
 import { Badge, Card, ImageSurface, Money } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
+import type { GuestProduct } from "../data/viewTypes";
 import "./ProductCard.css";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product }: { product: GuestProduct }) {
   const { t, locale } = useTranslation();
   return (
     <Card padding="none" className="lua-product-card">

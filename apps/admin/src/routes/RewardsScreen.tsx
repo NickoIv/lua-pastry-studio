@@ -1,14 +1,21 @@
-import { Badge, Button, PlusIcon, Points } from "@lua/ui";
-import type { Reward } from "@lua/types";
-import { useBackend } from "../backend/useBackend";
+import { Badge, Button, PlusIcon, Points, Skeleton } from "@lua/ui";
+import { useAdminRewards } from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 
-export function RewardsScreen() {
-  const backend = useBackend();
-  const rewards = backend.store.rewards;
+interface RewardRow {
+  id: string;
+  title: Record<string, string>;
+  pointsCost: number;
+  perCustomerLimit: number | null;
+  perCustomerLimitWindowDays: number | null;
+  isActive: boolean;
+}
 
-  const columns: DataTableColumn<Reward>[] = [
+export function RewardsScreen() {
+  const rewards = useAdminRewards();
+
+  const columns: DataTableColumn<RewardRow>[] = [
     { key: "title", header: "Награда", render: (r) => r.title.ru },
     {
       key: "cost",
@@ -45,7 +52,13 @@ export function RewardsScreen() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={rewards} />
+      {rewards.status === "loading" ? (
+        <Skeleton height={220} />
+      ) : rewards.status === "success" ? (
+        <DataTable columns={columns} rows={rewards.data} />
+      ) : (
+        <p>Не удалось загрузить награды.</p>
+      )}
     </div>
   );
 }

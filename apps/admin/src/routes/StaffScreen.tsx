@@ -1,6 +1,5 @@
-import { Badge, Button, PlusIcon } from "@lua/ui";
-import type { StaffUser } from "@lua/types";
-import { useBackend } from "../backend/useBackend";
+import { Badge, Button, PlusIcon, Skeleton } from "@lua/ui";
+import { useAdminStaff, useLocations } from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 
@@ -12,13 +11,23 @@ const ROLE_LABEL: Record<string, string> = {
   OWNER: "Владелец",
 };
 
-export function StaffScreen() {
-  const backend = useBackend();
-  const staffUsers = backend.store.staffUsers;
-  const locationName = (id: string) =>
-    backend.store.locations.find((l) => l.id === id)?.name ?? "—";
+interface StaffRow {
+  id: string;
+  displayName: string;
+  role: string;
+  locationId: string;
+  active: boolean;
+}
 
-  const columns: DataTableColumn<StaffUser>[] = [
+export function StaffScreen() {
+  const staffUsers = useAdminStaff();
+  const locations = useLocations();
+
+  const locationName = (id: string) =>
+    (locations.status === "success" && locations.data.find((l) => l.id === id)?.name) ||
+    "—";
+
+  const columns: DataTableColumn<StaffRow>[] = [
     { key: "name", header: "Имя", render: (s) => s.displayName },
     {
       key: "role",
@@ -47,7 +56,13 @@ export function StaffScreen() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={staffUsers} />
+      {staffUsers.status === "loading" ? (
+        <Skeleton height={220} />
+      ) : staffUsers.status === "success" ? (
+        <DataTable columns={columns} rows={staffUsers.data} />
+      ) : (
+        <p>Не удалось загрузить сотрудников.</p>
+      )}
     </div>
   );
 }

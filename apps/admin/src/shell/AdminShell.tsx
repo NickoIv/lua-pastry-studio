@@ -1,13 +1,17 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   ClubIcon,
   DashboardIcon,
   GiftIcon,
+  IconButton,
+  LogOutIcon,
   MenuIcon,
   OrdersIcon,
   SettingsIcon,
   UsersIcon,
 } from "@lua/ui";
+import { APP_CONFIG } from "@lua/config";
+import { useSession } from "../session/useSession";
 import "./AdminShell.css";
 
 const NAV_ITEMS = [
@@ -22,6 +26,9 @@ const NAV_ITEMS = [
 ] as const;
 
 export function AdminShell() {
+  const { staff, signOut } = useSession();
+  const navigate = useNavigate();
+
   return (
     <div className="lua-admin-shell">
       <aside className="lua-admin-shell__sidebar">
@@ -45,6 +52,19 @@ export function AdminShell() {
             );
           })}
         </nav>
+        {APP_CONFIG.dataMode === "server" && staff ? (
+          <div className="lua-admin-shell__account">
+            <span className="lua-admin-shell__account-name">{staff.displayName}</span>
+            <IconButton
+              icon={<LogOutIcon />}
+              label="Выйти"
+              onClick={() => {
+                signOut();
+                navigate("/login");
+              }}
+            />
+          </div>
+        ) : null}
       </aside>
       <main className="lua-admin-shell__content">
         <Outlet />

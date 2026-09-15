@@ -1,13 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { Button, ClockIcon, ScanIcon } from "@lua/ui";
-import { roleHasPermission } from "@lua/types";
-import { useSession } from "../session/useSession";
+import { roleHasPermission, type Role } from "@lua/types";
+import { useRequiredStaff } from "../session/useSession";
 import "./HomeScreen.css";
 
+function isKnownRole(role: string): role is Role {
+  return ["BARISTA", "WAITER", "SHIFT_MANAGER", "ADMIN", "OWNER"].includes(role);
+}
+
 export function HomeScreen() {
-  const { staff } = useSession();
+  const staff = useRequiredStaff();
   const navigate = useNavigate();
-  const canViewShiftLog = staff ? roleHasPermission(staff.role, "shift.view_log") : false;
+  const canViewShiftLog =
+    isKnownRole(staff.role) && roleHasPermission(staff.role, "shift.view_log");
 
   return (
     <div className="lua-staff-home">

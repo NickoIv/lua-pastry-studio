@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Points, QrIcon } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
-import { useLoyaltyAccount } from "../backend/hooks";
+import { useLoyaltyAccount } from "../data/hooks";
 import "./LoyaltyBalanceCard.css";
 
 export function LoyaltyBalanceCard() {
@@ -16,7 +16,7 @@ export function LoyaltyBalanceCard() {
         {t("guest.home.clubBalanceLabel")}
       </p>
       <p className="lua-loyalty-card__balance">
-        {account.status === "success" ? (
+        {account.status === "success" && account.data ? (
           <Points value={account.data.pointsBalance} locale={locale} />
         ) : (
           "…"

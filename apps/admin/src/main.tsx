@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { BackendProvider } from "./backend/BackendProvider";
+import { SessionProvider } from "./session/SessionProvider";
 import { ErrorBoundary } from "./shell/ErrorBoundary";
 
 const rootElement = document.getElementById("root");
@@ -12,9 +13,11 @@ createRoot(rootElement).render(
   <StrictMode>
     <ErrorBoundary>
       <BackendProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <SessionProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </SessionProvider>
       </BackendProvider>
     </ErrorBoundary>
   </StrictMode>,

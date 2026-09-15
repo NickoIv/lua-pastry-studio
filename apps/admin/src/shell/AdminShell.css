@@ -6,6 +6,8 @@
 .lua-admin-shell__sidebar {
   flex-shrink: 0;
   width: 232px;
+  display: flex;
+  flex-direction: column;
   padding: var(--lua-space-lg) var(--lua-space-md);
   background: var(--lua-color-text);
   color: var(--lua-color-text-on-accent);
@@ -13,6 +15,28 @@
   top: 0;
   height: 100vh;
   overflow-y: auto;
+}
+
+.lua-admin-shell__account {
+  margin-top: auto;
+  padding-top: var(--lua-space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  border-top: 1px solid var(--lua-color-on-dark-border);
+}
+
+.lua-admin-shell__account-name {
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lua-admin-shell__account .lua-icon-button {
+  color: var(--lua-color-on-dark-text-muted);
 }
 
 .lua-admin-shell__wordmark {

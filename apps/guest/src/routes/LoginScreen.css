@@ -1,0 +1,58 @@
+.lua-guest-login {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--lua-space-3xl) var(--lua-space-lg) var(--lua-space-xl);
+}
+
+.lua-guest-login__wordmark {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-2xl);
+  letter-spacing: 0.15em;
+  color: var(--lua-color-accent);
+}
+
+.lua-guest-login__title {
+  margin: var(--lua-space-xs) 0 4px;
+  font-size: var(--lua-text-xl);
+  font-family: var(--lua-font-serif);
+}
+
+.lua-guest-login__subtitle {
+  margin: 0 0 var(--lua-space-xl);
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-sm);
+  text-align: center;
+}
+
+.lua-guest-login__form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-md);
+}
+
+.lua-guest-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+}
+
+.lua-guest-login__field input {
+  height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-sm);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-sm);
+  font-weight: 400;
+}
+
+.lua-guest-login__error {
+  margin: 0;
+  color: var(--lua-color-danger);
+  font-size: var(--lua-text-sm);
+}

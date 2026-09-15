@@ -1,20 +1,22 @@
-import { Badge, Points } from "@lua/ui";
-import type { CustomerProfile } from "@lua/types";
-import { balanceFromLedger } from "@lua/domain";
-import { useBackend } from "../backend/useBackend";
+import { Badge, Points, Skeleton } from "@lua/ui";
+import { useAdminCustomers } from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 
+interface CustomerRow {
+  id: string;
+  firstName: string;
+  lastName?: string;
+  phone: string;
+  pointsBalance: number;
+  marketingOptIn: boolean;
+  createdAt: string;
+}
+
 export function CustomersScreen() {
-  const backend = useBackend();
-  const customers = backend.store.customers;
+  const customers = useAdminCustomers();
 
-  const balanceFor = (customerId: string) =>
-    balanceFromLedger(
-      backend.store.loyaltyTransactions.filter((t) => t.customerId === customerId),
-    );
-
-  const columns: DataTableColumn<CustomerProfile>[] = [
+  const columns: DataTableColumn<CustomerRow>[] = [
     {
       key: "name",
       header: "Имя",
@@ -25,7 +27,7 @@ export function CustomersScreen() {
       key: "balance",
       header: "Баланс",
       align: "right",
-      render: (c) => <Points value={balanceFor(c.id)} />,
+      render: (c) => <Points value={c.pointsBalance} />,
     },
     {
       key: "marketing",
@@ -46,7 +48,19 @@ export function CustomersScreen() {
   return (
     <div>
       <PageHeader title="Клиенты" />
-      <DataTable columns={columns} rows={customers} />
+      {customers.status === "loading" ? (
+        <Skeleton height={260} />
+      ) : customers.status === "success" ? (
+        <DataTable
+          columns={columns}
+          rows={customers.data.map((c) => ({
+            ...c,
+            pointsBalance: c.pointsBalance ?? 0,
+          }))}
+        />
+      ) : (
+        <p>Не удалось загрузить клиентов.</p>
+      )}
     </div>
   );
 }

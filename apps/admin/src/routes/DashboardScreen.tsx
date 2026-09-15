@@ -1,7 +1,6 @@
-import { Money, Points } from "@lua/ui";
+import { Money, Points, Skeleton } from "@lua/ui";
 import { formatOrderDateTime } from "@lua/utils";
-import { sumMoney, type money } from "@lua/types";
-import { useBackend } from "../backend/useBackend";
+import { useAdminOrders, useDashboard } from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { StatCard } from "../components/StatCard";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
@@ -11,33 +10,24 @@ interface OrderRow {
   id: string;
   date: string;
   items: string;
-  total: ReturnType<typeof money>;
+  total: { currency: "KZT"; minorUnits: number };
   points: number;
 }
 
 export function DashboardScreen() {
-  const backend = useBackend();
-  const orders = backend.store.orders;
-  const transactions = backend.store.loyaltyTransactions;
+  const dashboard = useDashboard();
+  const orders = useAdminOrders();
 
-  const revenue = sumMoney(orders.map((o) => o.total));
-  const pointsIssued = transactions
-    .filter((t) => t.points > 0)
-    .reduce((s, t) => s + t.points, 0);
-  const pointsRedeemed = transactions
-    .filter((t) => t.points < 0)
-    .reduce((s, t) => s - t.points, 0);
-
-  const rows: OrderRow[] = orders
-    .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((order) => ({
-      id: order.id,
-      date: formatOrderDateTime(order.createdAt),
-      items: order.items.map((i) => i.productName).join(", "),
-      total: order.total,
-      points: order.pointsEarned,
-    }));
+  const rows: OrderRow[] =
+    orders.status === "success"
+      ? orders.data.map((order) => ({
+          id: order.id,
+          date: formatOrderDateTime(order.createdAt),
+          items: order.items.map((i) => i.productName).join(", "),
+          total: order.total,
+          points: order.pointsEarned,
+        }))
+      : [];
 
   const columns: DataTableColumn<OrderRow>[] = [
     { key: "date", header: "Дата", render: (r) => r.date },
@@ -59,20 +49,46 @@ export function DashboardScreen() {
   return (
     <div>
       <PageHeader title="Дашборд" />
-      <div className="lua-dashboard__stats">
-        <StatCard label="Выручка (демо-данные)" value={<Money value={revenue} />} />
-        <StatCard label="Заказов" value={String(orders.length)} />
-        <StatCard
-          label="Участников Lua Club"
-          value={String(backend.store.customers.length)}
-        />
-        <StatCard label="Начислено баллов" value={pointsIssued.toLocaleString("ru-RU")} />
-        <StatCard label="Списано баллов" value={pointsRedeemed.toLocaleString("ru-RU")} />
-      </div>
+      {dashboard.status === "loading" ? (
+        <div className="lua-dashboard__stats">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} height={90} />
+          ))}
+        </div>
+      ) : dashboard.status === "success" ? (
+        <div className="lua-dashboard__stats">
+          <StatCard
+            label="Выручка (завершённые заказы)"
+            value={<Money value={dashboard.data.revenue} />}
+          />
+          <StatCard
+            label="Завершённых заказов"
+            value={String(dashboard.data.ordersCompleted)}
+          />
+          <StatCard
+            label="Участников Lua Club"
+            value={String(dashboard.data.activeMembers)}
+          />
+          <StatCard
+            label="Начислено баллов (30 дн.)"
+            value={dashboard.data.pointsIssued30d.toLocaleString("ru-RU")}
+          />
+          <StatCard
+            label="Списано баллов (30 дн.)"
+            value={dashboard.data.pointsRedeemed30d.toLocaleString("ru-RU")}
+          />
+        </div>
+      ) : (
+        <p>Не удалось загрузить дашборд.</p>
+      )}
 
       <section className="lua-dashboard__section">
         <h2 className="lua-dashboard__section-title">Последние заказы</h2>
-        <DataTable columns={columns} rows={rows} />
+        {orders.status === "loading" ? (
+          <Skeleton height={200} />
+        ) : (
+          <DataTable columns={columns} rows={rows} />
+        )}
       </section>
     </div>
   );

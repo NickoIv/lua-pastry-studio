@@ -1,34 +1,45 @@
-import { Badge, Money, Points } from "@lua/ui";
-import type { BadgeTone } from "@lua/ui";
-import type { Order, OrderStatus } from "@lua/types";
+import { Badge, Money, Points, Skeleton, type BadgeTone } from "@lua/ui";
 import { formatOrderDateTime } from "@lua/utils";
-import { useBackend } from "../backend/useBackend";
+import { useAdminCustomers, useAdminOrders } from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
+const STATUS_LABEL: Record<string, string> = {
   OPEN: "Открыт",
+  PAID_UNASSIGNED: "Не привязан",
   COMPLETED: "Завершён",
   CANCELLED: "Отменён",
   REFUNDED: "Возврат",
 };
 
-const STATUS_TONE: Record<OrderStatus, BadgeTone> = {
+const STATUS_TONE: Record<string, BadgeTone> = {
   OPEN: "warning",
+  PAID_UNASSIGNED: "warning",
   COMPLETED: "success",
   CANCELLED: "neutral",
   REFUNDED: "danger",
 };
 
-export function OrdersScreen() {
-  const backend = useBackend();
-  const orders = [...backend.store.orders].sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
-  );
-  const customerName = (id?: string) =>
-    backend.store.customers.find((c) => c.id === id)?.firstName ?? "—";
+interface OrderRow {
+  id: string;
+  createdAt: string;
+  customerId?: string;
+  items: Array<{ productName: string }>;
+  total: { currency: "KZT"; minorUnits: number };
+  pointsEarned: number;
+  status: string;
+}
 
-  const columns: DataTableColumn<Order>[] = [
+export function OrdersScreen() {
+  const orders = useAdminOrders();
+  const customers = useAdminCustomers();
+
+  const customerName = (id?: string) =>
+    (customers.status === "success" &&
+      customers.data.find((c) => c.id === id)?.firstName) ||
+    "—";
+
+  const columns: DataTableColumn<OrderRow>[] = [
     { key: "date", header: "Дата", render: (o) => formatOrderDateTime(o.createdAt) },
     { key: "customer", header: "Клиент", render: (o) => customerName(o.customerId) },
     {
@@ -51,14 +62,24 @@ export function OrdersScreen() {
     {
       key: "status",
       header: "Статус",
-      render: (o) => <Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Badge>,
+      render: (o) => (
+        <Badge tone={STATUS_TONE[o.status] ?? "neutral"}>
+          {STATUS_LABEL[o.status] ?? o.status}
+        </Badge>
+      ),
     },
   ];
 
   return (
     <div>
       <PageHeader title="Заказы" />
-      <DataTable columns={columns} rows={orders} />
+      {orders.status === "loading" ? (
+        <Skeleton height={300} />
+      ) : orders.status === "success" ? (
+        <DataTable columns={columns} rows={orders.data} />
+      ) : (
+        <p>Не удалось загрузить заказы.</p>
+      )}
     </div>
   );
 }

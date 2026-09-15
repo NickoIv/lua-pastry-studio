@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@lua/config": "workspace:*",
+    "@lua/data-server": "workspace:*",
     "@lua/domain": "workspace:*",
     "@lua/i18n": "workspace:*",
     "@lua/types": "workspace:*",

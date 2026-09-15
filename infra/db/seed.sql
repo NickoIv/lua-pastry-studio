@@ -1,0 +1,157 @@
+-- Deterministic local dev seed. Safe to re-run (pnpm db:seed) — every
+-- insert is idempotent via a fixed id or a unique idempotency_key.
+-- No real personal data: names/phones/emails are fixture data, and all
+-- passwords are clearly-labeled local dev accounts (see
+-- docs/LOCAL-BACKEND.md "Demo accounts").
+
+-- ---- Locations -----------------------------------------------------------
+insert into locations (id, name, address, city, open_hours, phone, is_active) values
+  ('10000000-0000-0000-0000-000000000001', 'Lua Pastry Studio — Достык', 'пр. Достык, 89', 'Алматы', '08:00–22:00', '+7 727 000 11 22', true),
+  ('10000000-0000-0000-0000-000000000002', 'Lua Pastry Studio — Кок-Тобе', 'ул. Достоевского, 1/1', 'Алматы', '09:00–21:00', '+7 727 000 33 44', true)
+on conflict (id) do update set name = excluded.name, address = excluded.address, is_active = excluded.is_active;
+
+-- ---- Categories ------------------------------------------------------------
+insert into product_categories (id, name, sort_order) values
+  ('20000000-0000-0000-0000-000000000001', '{"ru":"Кофе","kk":"Кофе","en":"Coffee"}', 1),
+  ('20000000-0000-0000-0000-000000000002', '{"ru":"Выпечка","kk":"Нан өнімдері","en":"Pastry"}', 2),
+  ('20000000-0000-0000-0000-000000000003', '{"ru":"Десерты","kk":"Десерттер","en":"Desserts"}', 3)
+on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
+
+-- ---- Products (prices in KZT minor units: 1 ₸ = 100 minor units) -----
+insert into products (id, category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try) values
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '{"ru":"Эспрессо","kk":"Эспрессо","en":"Espresso"}', '{"ru":"Классический двойной эспрессо."}', 120000, '{}', false, false, false),
+  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '{"ru":"Капучино","kk":"Капучино","en":"Cappuccino"}', '{"ru":"Эспрессо с бархатной молочной пенкой."}', 190000, '{milk}', false, false, true),
+  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '{"ru":"Латте","kk":"Латте","en":"Latte"}', '{"ru":"Мягкий кофе с молоком."}', 210000, '{milk}', false, false, false),
+  ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '{"ru":"Круассан миндальный","kk":"Бадам круассаны","en":"Almond croissant"}', '{"ru":"Слоёное тесто, миндальный крем."}', 270000, '{gluten,nuts,milk,egg}', false, false, true),
+  ('30000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000002', '{"ru":"Круассан классический","kk":"Классикалық круассан","en":"Classic croissant"}', '{"ru":"Французский рецепт, 27 слоёв."}', 220000, '{gluten,milk,egg}', false, false, false),
+  ('30000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000003', '{"ru":"Мильфей","kk":"Мильфей","en":"Mille-feuille"}', '{"ru":"Хрустящие слои теста и заварной крем."}', 320000, '{gluten,milk,egg}', false, true, false),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000003', '{"ru":"Тарт с малиной","kk":"Таңқурай тарты","en":"Raspberry tart"}', '{"ru":"Песочная основа, миндальный крем, малина."}', 340000, '{gluten,nuts,milk,egg}', true, false, false),
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Маленький принц»","kk":"«Кіші ханзада» десерты","en":"Le Petit Prince dessert"}', '{"ru":"Шоколадный мусс, карамелизированный орех, пралине."}', 350000, '{gluten,nuts,milk,egg}', false, false, true)
+on conflict (id) do update set name = excluded.name, price_minor_units = excluded.price_minor_units;
+
+insert into product_availability (product_id, location_id, in_stock, daily_limit)
+select p.id, l.id, true, null
+from products p cross join locations l
+on conflict (product_id, location_id) do update set in_stock = excluded.in_stock;
+
+-- ---- Collections -----------------------------------------------------------
+insert into collections (id, name, description, featured, starts_at, ends_at) values
+  ('40000000-0000-0000-0000-000000000001', '{"ru":"The Book Collection","kk":"The Book Collection","en":"The Book Collection"}', '{"ru":"Десерты, вдохновлённые любимыми историями."}', true, null, null),
+  ('40000000-0000-0000-0000-000000000002', '{"ru":"Осенняя коллекция","kk":"Күз коллекциясы","en":"Autumn collection"}', '{"ru":"Сезонные вкусы: малина, орех и карамель."}', true, '2026-09-01T00:00:00Z', '2026-11-30T23:59:59Z')
+on conflict (id) do update set name = excluded.name;
+
+insert into collection_products (collection_id, product_id) values
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000008'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000006'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000007')
+on conflict do nothing;
+
+-- ---- Loyalty program (singleton) ---------------------------------------
+insert into loyalty_programs (id, is_active, earn_rate_per_currency_unit, points_rounding_strategy, min_order_amount_minor_units, birthday_bonus_points, points_expire_after_days, tiers)
+values ('default', true, 0.05, 'round', 0, 1000, 365,
+  '[{"name":"Lua","minLifetimePoints":0,"earnRateMultiplier":1},{"name":"Lua Gold","minLifetimePoints":20000,"earnRateMultiplier":1.25}]')
+on conflict (id) do update set earn_rate_per_currency_unit = excluded.earn_rate_per_currency_unit;
+
+-- ---- Rewards -----------------------------------------------------------
+insert into rewards (id, title, linked_product_id, points_cost, is_active, per_customer_limit, per_customer_limit_window_days) values
+  ('70000000-0000-0000-0000-000000000001', '{"ru":"Капучино","kk":"Капучино","en":"Cappuccino"}', '30000000-0000-0000-0000-000000000002', 1000, true, 1, 1),
+  ('70000000-0000-0000-0000-000000000002', '{"ru":"Круассан","kk":"Круассан","en":"Croissant"}', '30000000-0000-0000-0000-000000000005', 1800, true, 1, 1),
+  ('70000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Маленький принц»","kk":"«Кіші ханзада» десерты","en":"Le Petit Prince dessert"}', '30000000-0000-0000-0000-000000000008', 2500, true, 1, 7)
+on conflict (id) do update set points_cost = excluded.points_cost, is_active = excluded.is_active;
+
+-- ---- Demo staff accounts (LOCAL DEV ONLY — see docs/LOCAL-BACKEND.md) --
+insert into staff_profiles (id, email, password_hash, display_name, role, location_id, active) values
+  ('50000000-0000-0000-0000-000000000001', 'aigerim@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Айгерим', 'BARISTA', '10000000-0000-0000-0000-000000000001', true),
+  ('50000000-0000-0000-0000-000000000002', 'yerlan@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Ерлан', 'SHIFT_MANAGER', '10000000-0000-0000-0000-000000000001', true),
+  ('50000000-0000-0000-0000-000000000003', 'dana@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Дана', 'ADMIN', '10000000-0000-0000-0000-000000000001', true)
+on conflict (id) do update set display_name = excluded.display_name, role = excluded.role;
+
+-- ---- Demo guest accounts (LOCAL DEV ONLY) --------------------------------
+insert into customer_profiles (id, email, password_hash, first_name, phone, birth_date, home_location_id, favorite_product_ids, marketing_opt_in) values
+  ('60000000-0000-0000-0000-000000000001', 'nikolay@lua.dev', crypt('LuaGuest123!', gen_salt('bf', 10)), 'Николай', '+7 701 234 56 78', '1993-06-18', '10000000-0000-0000-0000-000000000001',
+    array['30000000-0000-0000-0000-000000000002'::uuid, '30000000-0000-0000-0000-000000000008'::uuid], true),
+  ('60000000-0000-0000-0000-000000000002', 'aizhan@lua.dev', crypt('LuaGuest123!', gen_salt('bf', 10)), 'Айжан', '+7 707 555 12 34', null, '10000000-0000-0000-0000-000000000002', '{}', true)
+on conflict (id) do update set first_name = excluded.first_name;
+
+-- ---- Николай's loyalty ledger — sums to exactly 3288, same worked
+-- example as the product brief. Timestamps are true UTC instants
+-- (Asia/Almaty is UTC+5); the app renders them in the viewer's local
+-- time, so no manual offset is needed here.
+insert into loyalty_transactions (customer_id, type, points, reason, created_at, idempotency_key) values
+  ('60000000-0000-0000-0000-000000000001', 'manual_adjustment', 3353, 'Перенос баллов из предыдущей программы лояльности при запуске Lua Club', '2026-01-05T04:05:00Z', 'seed:migration'),
+  ('60000000-0000-0000-0000-000000000001', 'birthday_bonus', 1000, 'С днём рождения! Бонус Lua Club', '2026-06-18T04:00:00Z', 'seed:birthday')
+on conflict (idempotency_key) do nothing;
+
+-- Historical completed orders (already earned) for Николай, seeded
+-- directly as COMPLETED so Guest Order History has real history beyond
+-- the live demo order below.
+insert into orders (id, customer_id, location_id, staff_user_id, subtotal_minor_units, total_minor_units, status, points_earned, created_at, completed_at) values
+  ('80000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 530000, 530000, 'COMPLETED', 265, '2026-03-20T05:12:00Z', '2026-03-20T05:15:00Z'),
+  ('80000000-0000-0000-0000-000000000002', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 680000, 680000, 'COMPLETED', 340, '2026-05-30T12:40:00Z', '2026-05-30T12:43:00Z'),
+  ('80000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000002', 850000, 850000, 'COMPLETED', 425, '2026-08-10T07:05:00Z', '2026-08-10T07:08:00Z')
+on conflict (id) do update set status = excluded.status;
+
+insert into order_items (order_id, product_id, product_name, quantity, unit_price_minor_units, line_total_minor_units) values
+  ('80000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000003', 'Латте', 1, 210000, 210000),
+  ('80000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000006', 'Мильфей', 1, 320000, 320000),
+  ('80000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', 'Эспрессо', 1, 120000, 120000),
+  ('80000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000007', 'Тарт с малиной', 1, 340000, 340000),
+  ('80000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000005', 'Круассан классический', 1, 220000, 220000),
+  ('80000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000007', 'Тарт с малиной', 1, 340000, 340000),
+  ('80000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000006', 'Мильфей', 1, 320000, 320000),
+  ('80000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000002', 'Капучино', 1, 190000, 190000)
+on conflict do nothing;
+
+insert into loyalty_transactions (customer_id, type, points, order_id, reason, created_at, idempotency_key) values
+  ('60000000-0000-0000-0000-000000000001', 'earn', 265, '80000000-0000-0000-0000-000000000001', 'Покупка 80000000-0000-0000-0000-000000000001', '2026-03-20T05:15:00Z', 'earn:80000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000001', 'earn', 340, '80000000-0000-0000-0000-000000000002', 'Покупка 80000000-0000-0000-0000-000000000002', '2026-05-30T12:43:00Z', 'earn:80000000-0000-0000-0000-000000000002'),
+  ('60000000-0000-0000-0000-000000000001', 'earn', 425, '80000000-0000-0000-0000-000000000003', 'Покупка 80000000-0000-0000-0000-000000000003', '2026-08-10T07:08:00Z', 'earn:80000000-0000-0000-0000-000000000003')
+on conflict (idempotency_key) do nothing;
+
+-- A past reward redemption, already fulfilled, for Guest history depth.
+insert into reward_redemptions (id, reward_id, customer_id, points_cost, status, fulfilled_by_staff_id, fulfilled_at, created_at, expires_at) values
+  ('71000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000001', 2500, 'FULFILLED', '50000000-0000-0000-0000-000000000001', '2026-07-22T09:31:00Z', '2026-07-22T09:29:00Z', '2026-07-22T09:31:00Z')
+on conflict (id) do update set status = excluded.status;
+
+insert into loyalty_transactions (customer_id, type, points, reward_redemption_id, performed_by_staff_id, reason, created_at, idempotency_key) values
+  ('60000000-0000-0000-0000-000000000001', 'redeem', -2500, '71000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'Списание: Десерт «Маленький принц»', '2026-07-22T09:31:00Z', 'redemption:71000000-0000-0000-0000-000000000001')
+on conflict (idempotency_key) do nothing;
+
+update reward_redemptions set loyalty_transaction_id = (
+  select id from loyalty_transactions where idempotency_key = 'redemption:71000000-0000-0000-0000-000000000001'
+) where id = '71000000-0000-0000-0000-000000000001';
+
+-- The Sep-14 example order from the product brief (8 100 ₸ → +405) —
+-- also seeded as already COMPLETED so it shows in history immediately.
+insert into orders (id, customer_id, location_id, staff_user_id, subtotal_minor_units, total_minor_units, status, points_earned, created_at, completed_at) values
+  ('80000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 810000, 810000, 'COMPLETED', 405, '2026-09-14T11:42:00Z', '2026-09-14T11:45:00Z')
+on conflict (id) do update set status = excluded.status;
+
+insert into order_items (order_id, product_id, product_name, quantity, unit_price_minor_units, line_total_minor_units) values
+  ('80000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000002', 'Капучино', 1, 190000, 190000),
+  ('80000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000004', 'Круассан миндальный', 1, 270000, 270000),
+  ('80000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000008', 'Десерт «Маленький принц»', 1, 350000, 350000)
+on conflict do nothing;
+
+insert into loyalty_transactions (customer_id, type, points, order_id, reason, created_at, idempotency_key) values
+  ('60000000-0000-0000-0000-000000000001', 'earn', 405, '80000000-0000-0000-0000-000000000004', 'Покупка 80000000-0000-0000-0000-000000000004', '2026-09-14T11:45:00Z', 'earn:80000000-0000-0000-0000-000000000004')
+on conflict (idempotency_key) do nothing;
+
+-- ---- Live demo order for the Scenario-A smoke test/E2E (LUA-1001) -----
+-- Paid at the till, not yet linked to any Lua Club member. Staff scans
+-- the guest's identity QR and confirms this order to attach it and
+-- award points. Re-running this seed leaves an already-COMPLETED
+-- LUA-1001 alone rather than resetting it — use `pnpm db:reset` (or
+-- delete the row) to get a fresh PAID_UNASSIGNED one for another test run.
+insert into orders (id, external_order_code, location_id, subtotal_minor_units, total_minor_units, status) values
+  ('80000000-0000-0000-0000-000000000099', 'LUA-1001', '10000000-0000-0000-0000-000000000001', 810000, 810000, 'PAID_UNASSIGNED')
+on conflict (external_order_code) do nothing;
+
+insert into order_items (order_id, product_id, product_name, quantity, unit_price_minor_units, line_total_minor_units)
+select '80000000-0000-0000-0000-000000000099', id, name ->> 'ru', 1, price_minor_units, price_minor_units
+from products where id in (
+  '30000000-0000-0000-0000-000000000002', -- Капучино
+  '30000000-0000-0000-0000-000000000004', -- Круассан миндальный
+  '30000000-0000-0000-0000-000000000008'  -- Маленький принц
+)
+and not exists (select 1 from order_items where order_id = '80000000-0000-0000-0000-000000000099');

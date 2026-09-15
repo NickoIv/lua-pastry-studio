@@ -74,7 +74,53 @@
   font-size: var(--lua-text-2xl);
 }
 
+.lua-transaction__success-detail {
+  margin: 0;
+  color: var(--lua-color-text-muted);
+}
+
 .lua-transaction__success-balance {
   margin: 0 0 var(--lua-space-lg);
   color: var(--lua-color-text-muted);
+}
+
+.lua-transaction__error {
+  margin: 0;
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  background: var(--lua-color-danger-soft);
+  color: var(--lua-color-danger);
+  border-radius: var(--lua-radius-md);
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+}
+
+.lua-transaction__orders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-xs);
+  margin-bottom: var(--lua-space-md);
+}
+
+.lua-transaction__order-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  padding: var(--lua-space-sm);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-md);
+  background: var(--lua-color-surface);
+  font-size: var(--lua-text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lua-transaction__order-row--selected {
+  border-color: var(--lua-color-accent);
+  background: var(--lua-color-accent-soft);
+}
+
+.lua-transaction__empty {
+  margin: 0 0 var(--lua-space-md);
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-sm);
 }

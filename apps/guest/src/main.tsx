@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { I18nProvider } from "@lua/i18n";
 import { App } from "./App";
 import { BackendProvider } from "./backend/BackendContext";
+import { SessionProvider } from "./session/SessionProvider";
 import { ErrorBoundary } from "./shell/ErrorBoundary";
 
 const rootElement = document.getElementById("root");
@@ -14,9 +15,11 @@ createRoot(rootElement).render(
     <ErrorBoundary>
       <I18nProvider defaultLocale="ru">
         <BackendProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <SessionProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </SessionProvider>
         </BackendProvider>
       </I18nProvider>
     </ErrorBoundary>

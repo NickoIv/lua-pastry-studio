@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { AppHeader, Card, Money, Points, Skeleton } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
 import { formatOrderDateTime } from "@lua/utils";
-import { useOrder } from "../backend/hooks";
+import { useOrder } from "../data/hooks";
 import "./OrderDetailScreen.css";
 
 export function OrderDetailScreen() {

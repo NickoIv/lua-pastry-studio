@@ -1,216 +1,332 @@
 # Lua Platform — Architecture
 
-This document explains the shape of the foundation laid in this repository:
-what boundaries exist, why they're drawn where they are, and what a real
-backend would need to slot in without forcing a UI rewrite.
+This document explains the shape of this repository: what boundaries
+exist, why they're drawn where they are, and what's real today versus
+what a production deployment still needs. See
+[`docs/LOCAL-BACKEND.md`](LOCAL-BACKEND.md) for how to run the real
+backend and [`docs/QR-SECURITY.md`](QR-SECURITY.md) for the QR token
+model specifically.
 
 ## 1. High-level shape
 
 Three independent Vite/React apps (`apps/guest`, `apps/staff`, `apps/admin`)
-share five packages:
+share seven packages, plus a real local backend:
 
 ```
 apps/guest, apps/staff, apps/admin
         │  import
         ▼
-packages/ui        — design tokens + components (no business logic)
-packages/i18n       — ru/kk/en dictionaries + provider/hook
-packages/domain      — loyalty rules, ledger, redemption state machine,
-                       repository interfaces, mock backend
-packages/utils      — Money/points/date formatting (pure functions)
-packages/types      — shared entity types, no runtime code
-packages/config     — reads Vite env vars into one typed object
+packages/ui           — design tokens + components (no business logic)
+packages/i18n          — ru/kk/en dictionaries + provider/hook
+packages/domain         — loyalty rules, ledger, redemption state machine,
+                          repository interfaces, MOCK backend
+packages/data-server    — HTTP client + typed DTOs for the REAL backend
+packages/utils         — Money/points/date formatting (pure functions)
+packages/types         — shared entity types + API error codes, no runtime code
+packages/config        — reads Vite env vars into one typed object
+
+packages/server         — Express API (the real backend's HTTP surface)
+infra/db                — Postgres schema, RLS policies, atomic SQL
+                          functions, seed data (infra/db/migrations, seed.sql)
 ```
 
-`types` has no dependencies. `domain` and `utils` depend only on `types`.
-`ui` depends on `types` and `utils` (for `<Money>`/`<Points>`). Apps depend
-on all five. Nothing flows backward — a change in an app can never leak
-into a package, which is what makes `domain` and `ui` safely shared.
+`types` has no dependencies. `domain`, `data-server` and `utils` depend
+only on `types`. `ui` depends on `types` and `utils`. Apps depend on all
+of the above. Nothing flows backward.
 
-Each app owns its own **backend context** (`src/backend/context.ts`):
-a `createMockBackend()` instance held in a React context. Guest and Staff
-each construct their *own* instance — see §4 for why that specific choice
-matters for the QR flow.
+**Two data layers, one contract.** Every app can run in `mock` mode
+(`packages/domain`'s in-memory repositories, zero setup) or `server`
+mode (`packages/data-server`'s `LuaApiClient` talking to
+`packages/server`, backed by a real local Postgres). Each app's
+`src/data/hooks.ts` is the _only_ place that branches on
+`APP_CONFIG.dataMode` — every screen calls the same hooks
+(`useLoyaltyAccount()`, `useOrders()`, …) regardless of which mode is
+active. See §8.
 
 ## 2. Domain boundaries
 
-`packages/types/src` defines the entities from the product brief: `Customer`,
-`CustomerProfile`, `StaffUser`/`Role`/`Permission`, `Location`, `Product`/
-`ProductCategory`/`Collection`, `Promotion`, `Order`/`OrderItem`,
+`packages/types/src` defines the entities from the product brief:
+`Customer`, `CustomerProfile`, `StaffUser`/`Role`/`Permission`,
+`Location`, `Product`/`ProductCategory`/`Collection`, `Order`/`OrderItem`,
 `LoyaltyAccount`/`LoyaltyTransaction`/`LoyaltyProgram`, `Reward`/
-`RewardRedemption`, `QRToken` (+ issuer/verifier interfaces), `Notification`,
-`AuditLog`. Every field that represents money is a `Money` value
+`RewardRedemption`, `QRToken`, `Notification`, `AuditLog`, and (new)
+`ApiErrorCode` — the typed error vocabulary the server and every client
+share (§9). Every field that represents money is a `Money` value
 (`{ currency, minorUnits }`, integer only — see §5), never a float.
 
-`packages/domain/src/repositories` defines the interfaces every screen
-talks to: `CustomerRepository`, `MenuRepository`, `OrdersRepository`,
-`LoyaltyRepository`, `RewardsRepository`. Today `packages/domain/src/mock`
-is the only implementation. A future `packages/domain/src/http` (or a
-Supabase-backed package) implementing the *same* interfaces is a drop-in
-replacement — no screen imports a mock class directly except through the
-`useBackend()` hook's return type, which is `MockBackend` today and would
-become a union/interface once a second implementation exists.
+`packages/domain/src/repositories` defines the interfaces the _mock_
+data layer implements: `CustomerRepository`, `MenuRepository`,
+`OrdersRepository`, `LoyaltyRepository`, `RewardsRepository`.
+`packages/domain/src/mock` is their only implementation. The real
+backend doesn't implement these same TypeScript interfaces —
+`packages/data-server`'s `LuaApiClient` has an equivalent-but-not-
+identical shape, because the real backend's trust boundary is
+fundamentally different (see §4): a mock repository can synchronously
+mutate its own in-memory ledger, but the real system requires a
+server-verified staff JWT before any ledger write happens at all. Each
+app's `data/hooks.ts` is what reconciles the two shapes into one set of
+hooks screens call.
 
-`packages/domain/src/loyalty` holds the only code allowed to touch point
-balances: `earning.ts` (rate/rounding/tier math), `ledger.ts` (balance is
-always *derived*, never trusted as stored state), `earnService.ts`
-(scenario A) and `redemption.ts` (scenario B — see §3).
+`packages/domain/src/loyalty` still holds the reference implementation
+of the loyalty rules (`earning.ts`, `ledger.ts`, `earnService.ts`,
+`redemption.ts`) used by mock mode, and is covered by
+`packages/domain/tests`. The **same rules are re-implemented as
+Postgres functions** for server mode (`infra/db/migrations/005_functions.sql`)
+— not shared code, because SQL and TypeScript can't share a function
+body, but deliberately mirroring the same shape (ledger-derived balance,
+two-phase redemption, idempotency keys) and covered by an equivalent
+test suite (`packages/server/tests`) that asserts the exact same
+numbers.
 
 ## 3. Loyalty: earning and redemption
 
-**Ledger, not a counter.** `LoyaltyAccount.pointsBalance` is a cache. The
-source of truth is the append-only `LoyaltyTransaction` list, and
-`balanceFromLedger()` (`packages/domain/src/loyalty/ledger.ts`) recomputes
-it by summing signed `points` values. Every transaction carries a `type`
-(`earn` / `redeem` / `refund` / `manual_adjustment` / `birthday_bonus` /
-`campaign_bonus` / `expiration` / `reversal`), an optional `orderId` /
-`rewardRedemptionId` / `performedByStaffId`, a human `reason`, and an
-`idempotencyKey` so a retried network call can't double-apply.
+**Ledger, not a counter**, in both data layers. Mock:
+`balanceFromLedger()` sums `LoyaltyTransaction.points`. Server: there is
+no `customers.balance` column anywhere in `infra/db/migrations` —
+`loyalty_transactions` is queried with `sum(points)` every time a
+balance is needed (`packages/server/src/routes/loyalty.ts`). Every
+transaction/row carries a `type` (`earn` / `redeem` / `refund` /
+`manual_adjustment` / `birthday_bonus` / `campaign_bonus` / `expiration`
+/ `reversal`), an optional `order_id` / `reward_redemption_id` /
+`performed_by_staff_id`, a human `reason`, and an `idempotency_key` so a
+retried network call can't double-apply — enforced as a real `unique`
+constraint in Postgres, not just an application-level check.
 
-**Scenario A — purchase (`EarnService.earnForCompletedOrder`).** Takes a
-completed `Order`, reads the *current* `LoyaltyProgram` (never a
-hard-coded rate) and the customer's tier multiplier, and appends one
-`earn` transaction keyed by `earn:${orderId}` — replaying the same order
-is a no-op, not a double credit.
+**Scenario A — purchase.** Mock: `EarnService.earnForCompletedOrder`.
+Server: the `confirm_order_earn(order_id, customer_id, staff_id)` SQL
+function — reads the _current_ `loyalty_programs` row (never a
+hard-coded rate), computes points, attaches the order, inserts the
+ledger row keyed `earn:<orderId>`, writes an audit log entry, all inside
+one transaction. Re-confirming an already-`COMPLETED` order is rejected
+(`ORDER_ALREADY_REWARDED`), not double-earned.
 
-**Scenario B — buy with points (`RedemptionService`).** This is the part
-the product brief calls out as a hard rule: *choosing* a reward must never
-move points.
+**Scenario B — buy with points.** _Choosing_ a reward must never move
+points:
 
-1. `requestRedemption(customerId, reward)` — validates the reward is
-   active/in stock and the balance covers it, then creates a
-   `RewardRedemption` with `status: "PENDING"`. **No ledger write here.**
-2. A QR token is issued for that redemption (`QRTokenIssuer.issueRewardRedemptionToken`).
-3. Staff scans it; `fulfillRedemption(redemptionId, staffId)` re-validates
-   the redemption is still `PENDING` and not expired, re-checks the
-   balance (in case it changed since step 1), and *only then* appends a
-   `redeem` transaction (negative points) keyed by
-   `redemption:${redemptionId}` — a second confirm attempt on the same
-   redemption throws `RedemptionNotPendingError` instead of debiting twice.
+1. **Request** (`request_reward_redemption` / mock's
+   `RedemptionService.requestRedemption`) — validates the reward is
+   active and the balance covers it, creates a `PENDING` redemption.
+   **No ledger write.**
+2. A QR token is issued for that redemption (`create_qr_session` /
+   mock's `issueRewardRedemptionToken`) — see `docs/QR-SECURITY.md`.
+3. Staff scans it; **confirm** (`confirm_reward_redemption` / mock's
+   `RedemptionService.fulfillRedemption`) re-validates status/expiry/
+   balance and _only then_ inserts a `redeem` transaction keyed
+   `redemption:<id>`. A second confirm is rejected
+   (`REDEMPTION_ALREADY_COMPLETED`), including under concurrent staff
+   scans — the SQL function takes a row lock (`for update`) on the
+   redemption before checking status, so two simultaneous confirms
+   serialize instead of racing (see `docs/QR-SECURITY.md` "Replay /
+   race protection").
 
-This is covered end-to-end in `packages/domain/tests/redemption.test.ts`,
-using the exact numbers from the product brief: balance 3,288 → reward
-costs 2,500 → balance unchanged after *request* → 788 after *confirm*.
+Both paths are proven against the exact numbers from the product brief
+— balance 3,288 → reward costs 2,500 → unchanged after _request_ → 788
+after _confirm_ — in **two** independent test suites:
+`packages/domain/tests/redemption.test.ts` (mock, in-memory) and
+`packages/server/tests/flows.test.ts` (server mode, against the real
+Postgres, over real HTTP). A full Playwright run driving actual Guest
+and Staff browser sessions against the real backend reproduces the same
+numbers end to end — see §11.
 
-**Configurability.** `LoyaltyProgram` (earn rate, rounding strategy,
-minimum order amount, birthday bonus, points expiry, tiers) is a plain
-record read through `LoyaltyRepository.getProgram()` /
-`.updateProgram()` — nothing in `domain` or the apps hard-codes "5%".
-Lua Admin's Loyalty screen edits it live (in the current mock session;
-persisting it is a backend concern, not a UI one).
+**Configurability**, both modes: `LoyaltyProgram` (earn rate, rounding
+strategy, minimum order amount, birthday bonus, points expiry, tiers,
+and now QR TTL) is read through `getProgram()`/`updateProgram()`
+(mock) or `GET/PATCH /api/loyalty/program` and `/api/admin/loyalty/program`
+(server) — nothing hard-codes "5%". In server mode, Lua Admin's Loyalty
+screen writes to the real `loyalty_programs` row and it persists.
 
-## 4. QR security — what's real now, what's deferred
+## 4. QR — see docs/QR-SECURITY.md for the full model
 
-The brief is explicit that this stage should model the interfaces
-correctly without faking production cryptography. `packages/types/src/qr.ts`
-defines the shape a real implementation must have:
+Summary: a real backend now exists, so the QR flow is no longer a
+same-process simulation. `packages/server` issues a cryptographically
+random token, stores only its SHA-256 digest, and Lua Guest renders it
+as a genuine camera-decodable QR image (the `qrcode` package — verified
+in this repo by round-tripping a rendered code back through `jsQR` in a
+test script, not just eyeballed). Lua Staff's Scan screen
+(`apps/staff/src/components/QrScanner.tsx`) uses the native
+`BarcodeDetector` API where available and a `jsQR` canvas-frame fallback
+everywhere else, with a dev-only manual token paste field
+(`import.meta.env.DEV`-gated) for desktop testing without a camera.
 
-- `QRToken` — opaque `encoded` string, `purpose` (`IDENTITY` |
-  `REWARD_REDEMPTION`), `expiresAt`. The frontend never parses or
-  constructs `encoded` itself.
-- `QRTokenIssuer` / `QRTokenVerifier` — issue, verify, and `markUsed()`
-  (so a second scan of the same token is rejected — replay protection).
-
-`packages/domain/src/qr/mockTokenService.ts` implements both with an
-in-memory map and a random string instead of a signed JWT/HMAC — it is
-loudly named `MockQRTokenService` and documented as **development-only**.
-A production issuer/verifier has to live server-side (it must be able to
-reject a token the client didn't have the private key to forge); swapping
-it in means writing one class against the same two interfaces, not
-touching any screen.
-
-**Known limitation, and why it's fine at this stage:** Lua Guest and Lua
-Staff each run their own `createMockBackend()` instance in dev, so a QR
-code rendered by Guest cannot literally be scanned and verified by Staff
-in this repo — there is no shared process/server yet. Staff's Scan screen
-demonstrates the full issue → encode → scan → verify → mark-used sequence
-by doing all five steps against its own instance ("simulate scan"). The
-piece a real backend adds is the network hop between two devices, not a
-different protocol shape.
-
-TTL is configurable, not hard-coded: `VITE_QR_TOKEN_TTL_SECONDS`
-(`.env.example`, default 90s, brief's target is 60–120s) flows through
-`packages/config`'s `APP_CONFIG.qrTokenTtlSeconds`.
+Mock mode keeps the same two-dev-button "simulate scan" flow from the
+previous milestone (`apps/staff/src/routes/ScanScreen.tsx`) for
+zero-setup offline demos — see `docs/QR-SECURITY.md` for why a QR issued
+by mock-mode Guest still can't be scanned by a different device (each
+mock backend instance is process-local; server mode has no such
+limitation, since both apps talk to the one real Postgres database).
 
 ## 5. Money
 
 `packages/types/src/money.ts`: `Money = { currency: "KZT", minorUnits: number }`,
-always an integer. `money(1900)` constructs `1900 ₸` as `190000` minor
-units; arithmetic (`addMoney`, `subtractMoney`, `sumMoney`, …) operates on
-integers only. Display formatting (`packages/utils/src/money.ts`) uses
-`Intl.NumberFormat` and is the *only* place a `Money` becomes a string —
-no component formats currency by hand. There is no floating-point money
-anywhere in `domain` or `types`.
+always an integer, in both TypeScript and Postgres
+(`*_minor_units integer` columns throughout `infra/db/migrations`, `check (... >= 0)`
+constraints). Display formatting (`packages/utils/src/money.ts`) uses
+`Intl.NumberFormat` and is the _only_ place a `Money` becomes a string.
+`confirm_order_earn`'s point calculation is done in SQL
+(`(total_minor_units / 100.0) * earn_rate`) with the same
+floor/round/ceil rounding-strategy switch as the TypeScript reference
+implementation — no floating-point money anywhere in either layer.
 
-## 6. RBAC
+## 6. RBAC & security — real now, not just typed
 
-`packages/types/src/staff.ts` defines `Role` (`BARISTA`, `WAITER`,
-`SHIFT_MANAGER`, `ADMIN`, `OWNER`), `Permission`, and a static
-`ROLE_PERMISSIONS` map plus `roleHasPermission()`. Lua Staff uses it today
-to gate the Shift Log entry point (`shift.view_log`) behind
-`SHIFT_MANAGER`+. `StaffFacingCustomer` (`packages/types/src/customer.ts`)
-is the deliberately reduced view a staff device is allowed to render after
-a scan — name, tier, masked phone; no birth date, no full history, no
-admin fields. There is no real authentication yet (Staff's login is a
-role picker, not a PIN/SSO check) — see Known limitations below.
+`packages/types/src/staff.ts` still defines `Role`/`Permission`/
+`ROLE_PERMISSIONS` for client-side gating (e.g. Lua Staff hides the
+Shift Log entry point from roles without `shift.view_log`). In server
+mode this is backed by actual enforcement, in two independent layers:
+
+1. **API layer** (`packages/server/src/auth/middleware.ts`) —
+   `requireCustomer` / `requireStaff` / `requireRole(...)` reject a
+   request before it touches the database if the JWT's `kind`/`role`
+   doesn't match what the route needs.
+2. **Database layer** (`infra/db/migrations/004_roles.sql`,
+   `006_rls.sql`, `008_staff_shift_log.sql`) — three Postgres roles
+   (`app_customer`, `app_staff`, `app_admin`; `app_admin` inherits
+   `app_staff`'s grants) with Row Level Security policies on every
+   sensitive table (`customer_profiles`, `orders`, `order_items`,
+   `loyalty_transactions`, `reward_redemptions`, `staff_profiles`,
+   `audit_logs`, `qr_sessions`). `packages/server/src/db.ts#withRole`
+   runs every request inside a transaction that `SET LOCAL ROLE`s to the
+   caller's session role and sets `app.customer_id`/`app.staff_id`
+   session variables _from the verified JWT_ — so a bug in the API
+   layer's own authorization logic is still caught by Postgres itself.
+   `packages/server/tests/security.test.ts` asserts this directly (e.g.
+   a customer's JWT literally cannot `SELECT` another customer's
+   `loyalty_transactions` rows — not "the API declines to return them",
+   the database query returns zero rows).
+
+`StaffFacingCustomer` / server's `resolve_qr_token()` DTO both stay the
+deliberately reduced view a staff device is allowed to render after a
+scan — id, display name, masked phone, balance; no birth date, no email,
+no full order history. In server mode, `app_staff` has **no SQL grant
+at all** on `customer_profiles` — that data literally cannot be queried
+by a staff session, not merely hidden by the UI.
+
+**Still not real:** staff device authentication is email/password
+against the same demo accounts as everyone else, not PIN/badge/SSO;
+there's no rate limiting; there's no production secrets management. See
+`docs/QR-SECURITY.md` "What's real today vs. what production needs".
 
 ## 7. i18n
 
-`packages/i18n` ships flat, namespaced dictionaries (`"guest.club.title"`
-style keys) for `ru` (primary/canonical), `kk`, and `en`, typed so a
-missing key in `kk.ts`/`en.ts` is a compile error, not a silent fallback.
-`I18nProvider` + `useTranslation()` cover the app chrome — navigation,
-headers, buttons, section titles — for all three apps today. Deep
-microcopy (every toast/validation string) is not yet routed through the
-dictionary; see Known limitations.
+Unchanged from the previous milestone: `packages/i18n` ships flat,
+namespaced dictionaries for `ru` (primary), `kk`, and `en`, typed so a
+missing key is a compile error. Covers app chrome, not every backend
+error message — those go through `API_ERROR_MESSAGES_RU`
+(`packages/types/src/apiErrors.ts`) instead, which is Russian-only today
+(see Known limitations).
 
-## 8. Why mock repositories are safe to keep around
+## 8. Repository adapters — mock and server, side by side
 
-Every screen depends on a repository *interface*
-(`packages/domain/src/repositories`), obtained through one `useBackend()`
-hook per app. `createMockBackend()` is the only thing that constructs
-concrete classes. This means:
+Each app's `src/data/hooks.ts` is the single seam between UI and data:
 
-- Adding a real backend is writing `createHttpBackend()` (or a
-  Supabase-backed equivalent) that returns the same shape.
-- Nothing in `apps/*/src/routes` needs to change — they call
-  `backend.orders.listByCustomer(id)`, not `fetch(...)`.
-- Mock and production code never intermix inside a component; the
-  boundary is the backend factory, one file per app.
+```ts
+export function useLoyaltyAccount() {
+  const backend = useBackend(); // mock repositories (packages/domain)
+  const { session } = useSession(); // server-mode auth state
+  return useAsync(async () => {
+    if (isServerMode) return apiClient.getMyLoyaltyAccount(); // packages/data-server
+    return backend.loyalty.getAccount(CURRENT_CUSTOMER_ID); // packages/domain mock
+  }, [backend, session]);
+}
+```
 
-## 9. Planned production backend
+Screens only ever call `useLoyaltyAccount()` — never `fetch()`, never a
+mock class directly. `apps/*/src/data/viewTypes.ts` (Guest) defines the
+loose common shape both branches satisfy structurally, so switching
+`VITE_LUA_DATA_MODE` doesn't require touching a single route component.
+This is the direct descendant of the previous milestone's "mock
+repositories behind one `useBackend()` hook" design, extended to a
+second, real implementation instead of staying hypothetical.
 
-Supabase/Postgres is the intended target (Auth, Postgres, RLS, Storage,
-Realtime, Edge Functions all map cleanly onto the repository interfaces
-above), but **no Supabase project is connected in this repository** — see
-`.env.example` for the placeholder `VITE_SUPABASE_URL` /
-`VITE_SUPABASE_ANON_KEY` fields, both intentionally blank. Standing up an
-actual project, writing the Postgres schema (mirroring `packages/types`)
-and RLS policies, and implementing the repository interfaces against it
-is explicitly out of scope for this pass.
+`packages/data-server/src/LuaApiClient.ts` mirrors `packages/server`'s
+REST surface 1:1 (one method per route) and holds the session JWT in
+memory, with each app's `SessionProvider` persisting it to
+`localStorage` as a per-viewer convenience (not httpOnly-cookie-safe —
+fine for local dev, called out as a known limitation).
 
-## 10. Known limitations (honest list)
+## 9. API error model
 
-- **No real authentication.** Guest has no login flow (the signed-in
-  customer is fixed to a fixture); Staff's login is a role picker, not a
-  PIN/SSO/device check. Both need a real auth provider before production.
-- **QR tokens aren't cross-app in dev**, as explained in §4 — each app's
-  mock backend is its own process-local instance.
-- **No real QR scanning/camera.** Guest renders a QR-*shaped* deterministic
-  pattern (`apps/guest/src/components/QrCodeArt.tsx`) for visual fidelity,
-  not a real scannable encoding; Staff's "scan" is two dev buttons. Both
-  are called out in-code and were explicitly deferred by the brief.
-- **Admin writes don't persist** past the current tab's session — there's
-  no backend to persist to yet (mutations go through repository methods
-  like `LoyaltyRepository.updateProgram`, so wiring persistence later is
-  additive, not a rewrite).
-- **i18n covers UI chrome, not every string.** ru/kk/en are wired end to
-  end structurally; kk/en translations for the seeded menu/reward copy are
-  present in fixtures but haven't been reviewed by a native speaker.
-- **No offline/service-worker PWA behavior yet.** Guest ships a web
-  manifest and safe-area-correct layout (installable, standalone-ready)
-  but no service worker/offline cache.
-- **No automated visual regression suite.** UI correctness was verified
-  manually (typecheck + build + a Playwright pass checking for console
-  errors and horizontal overflow across all three apps) rather than with
-  a committed screenshot-diff test.
+`packages/types/src/apiErrors.ts`'s `ApiErrorCode` union (`QR_EXPIRED`,
+`QR_USED`, `QR_INVALID`, `INSUFFICIENT_POINTS`,
+`REDEMPTION_ALREADY_COMPLETED`, `ORDER_ALREADY_REWARDED`, `FORBIDDEN`,
+`UNAUTHENTICATED`, …) is the _only_ vocabulary a server response uses.
+Postgres functions `raise exception` with a message that's exactly one
+of these codes; `packages/server/src/errors.ts#mapPostgresError`
+translates that (or a `42501` permission-denied SQLSTATE) into an
+`AppError` with the right HTTP status, and the Express error handler
+(`packages/server/src/app.ts`) serializes `{ error: { code, message } }`
+— a raw driver/SQL error string never reaches the client.
+`packages/data-server/src/ApiClient.ts#ApiRequestError` carries the same
+code back into the frontend, and screens map it through
+`API_ERROR_MESSAGES_RU` for a Russian message instead of showing raw
+text (e.g. `apps/guest/src/routes/ClubScreen.tsx`'s redeem-error
+handling).
+
+## 10. Local backend infrastructure
+
+See `docs/LOCAL-BACKEND.md` for full operational detail. Summary: no
+Docker/Podman/Colima is installed on the dev machine this was built on,
+so `supabase start`'s containerized stack isn't available; instead,
+Postgres 16 runs as a plain Homebrew install in a project-scoped data
+directory (`infra/db/pgdata`, port 54329, `infra/db/scripts/*.sh`
+manage init/start/stop/migrate/seed/reset), and `packages/server` is a
+small Express API standing in for what PostgREST + GoTrue would
+otherwise provide. If Docker becomes available later, the SQL schema
+and RLS policies in `infra/db/migrations` are close to what a
+`supabase init` project's migrations would contain unchanged.
+
+## 11. Tests
+
+- `packages/domain/tests` (18) + `packages/utils/tests` (8) — pure
+  logic, no I/O, unchanged from the previous milestone.
+- `packages/server/tests` (25) — integration tests against the real
+  local Postgres (`pnpm test:server`): both loyalty scenarios end to
+  end over real HTTP, QR expiry/reuse/invalid-token handling, and RBAC
+  (cross-customer data leakage, role enforcement, unauthenticated
+  access) — see `packages/server/tests/{flows,qr,security}.test.ts`.
+  Each test file truncates and reseeds the database itself
+  (`infra/db/scripts/wipe.sh`), so the suite is safe to re-run without a
+  manual reset.
+- A Playwright smoke script (not checked into the repo as an automated
+  CI test — see Known limitations) drove real browser sessions for
+  Guest and Staff against the real backend end to end, confirming both
+  scenarios' exact numbers and that a genuinely-issued QR image
+  round-trips through a standard QR decoder.
+
+## 12. Known limitations (honest list)
+
+- **Staff/Admin auth is email/password against demo accounts**, not
+  PIN/badge/SSO for staff or phone-OTP for guests. The `LuaApiClient`
+  boundary is shaped so swapping the verification step later doesn't
+  touch UI code — see `docs/LOCAL-BACKEND.md` §4.
+- **No rate limiting, no production secrets management** — this server
+  has no deployment story beyond localhost/LAN. See
+  `docs/QR-SECURITY.md`.
+- **Cross-device camera testing wasn't physically verified against a
+  real iPhone** from this environment — Playwright's fake-camera-device
+  flags proved the `getUserMedia`/`BarcodeDetector`/`jsQR` code paths
+  work and a genuinely-rendered QR round-trips through a real decoder,
+  but a physical phone's Safari camera permission prompt and HTTPS
+  requirements weren't exercised. `docs/LOCAL-BACKEND.md` §6 explains
+  exactly what will and won't work and why.
+- **Admin menu/rewards/staff management stays read-only** this round —
+  only the Loyalty program screen writes to the real backend
+  (`PATCH /api/admin/loyalty/program`). Adding CRUD for products/rewards/
+  staff is additive (the RLS/grant shape already distinguishes
+  `app_admin`), not a redesign.
+- **No Realtime.** Screens refetch on navigation rather than subscribing
+  to live updates — acceptable per the brief's explicit permission to
+  prefer refetch-on-focus over a Realtime setup this round.
+- **No background expiry sweep** for abandoned `PENDING` redemptions —
+  handled lazily on the next confirm attempt instead of a scheduled job.
+- **API error messages are ru-only** (`API_ERROR_MESSAGES_RU`) — the
+  typed `ApiErrorCode` vocabulary itself is locale-independent, but a
+  `kk`/`en` message map hasn't been written yet.
+- **No offline/service-worker PWA behavior.** Guest ships a web manifest
+  and safe-area-correct layout but no service worker/offline cache.
+- **The Playwright E2E smoke run is a script, not a committed automated
+  test** — it lives outside the repo (run manually against a live local
+  stack) rather than as a `pnpm test:e2e` CI-style suite, since it needs
+  three dev servers and a seeded database running simultaneously.
+  `packages/server/tests` cover the same assertions at the HTTP-integration
+  level, which _is_ part of `pnpm verify`.

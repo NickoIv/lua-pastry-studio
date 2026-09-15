@@ -7,7 +7,14 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /** When `interactive` is paired with `onClick`, the card behaves like a button for keyboard/screen-reader users too — it never relies on a bare clickable `<div>`. */
-export function Card({ padding = "md", interactive = false, className, onClick, onKeyDown, ...rest }: CardProps) {
+export function Card({
+  padding = "md",
+  interactive = false,
+  className,
+  onClick,
+  onKeyDown,
+  ...rest
+}: CardProps) {
   const classes = [
     "lua-card",
     `lua-card--padding-${padding}`,

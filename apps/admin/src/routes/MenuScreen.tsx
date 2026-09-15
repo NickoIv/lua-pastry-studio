@@ -1,16 +1,27 @@
-import { Badge, Button, Money, PlusIcon } from "@lua/ui";
-import type { Product } from "@lua/types";
-import { useBackend } from "../backend/useBackend";
+import { Badge, Button, Money, PlusIcon, Skeleton } from "@lua/ui";
+import { useAdminMenu } from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 
-export function MenuScreen() {
-  const backend = useBackend();
-  const products = backend.store.products;
-  const categoryName = (id: string) =>
-    backend.store.categories.find((c) => c.id === id)?.name.ru ?? "—";
+interface ProductRow {
+  id: string;
+  categoryId: string;
+  name: Record<string, string>;
+  price: { currency: "KZT"; minorUnits: number };
+  isMustTry: boolean;
+  isNew: boolean;
+  isSeasonal: boolean;
+}
 
-  const columns: DataTableColumn<Product>[] = [
+export function MenuScreen() {
+  const menu = useAdminMenu();
+
+  const categoryName = (id: string) =>
+    menu.status === "success"
+      ? (menu.data.categories.find((c) => c.id === id)?.name.ru ?? "—")
+      : "—";
+
+  const columns: DataTableColumn<ProductRow>[] = [
     { key: "name", header: "Товар", render: (p) => p.name.ru },
     { key: "category", header: "Категория", render: (p) => categoryName(p.categoryId) },
     {
@@ -30,15 +41,6 @@ export function MenuScreen() {
         </div>
       ),
     },
-    {
-      key: "availability",
-      header: "Наличие",
-      render: (p) => (
-        <Badge tone={p.availability.every((a) => a.inStock) ? "success" : "danger"}>
-          {p.availability.every((a) => a.inStock) ? "В наличии" : "Нет в наличии"}
-        </Badge>
-      ),
-    },
   ];
 
   return (
@@ -51,7 +53,13 @@ export function MenuScreen() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={products} />
+      {menu.status === "loading" ? (
+        <Skeleton height={300} />
+      ) : menu.status === "success" ? (
+        <DataTable columns={columns} rows={menu.data.products} />
+      ) : (
+        <p>Не удалось загрузить меню.</p>
+      )}
     </div>
   );
 }

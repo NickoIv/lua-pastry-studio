@@ -41,6 +41,7 @@
   --lua-color-on-dark-surface: #382c25;
   --lua-color-on-dark-surface-alt: #4a3c32;
   --lua-color-on-dark-border: #4a3c32;
+  --lua-color-on-dark-danger: #e79a91;
 
   /* Typography */
   --lua-font-serif:

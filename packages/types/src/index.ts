@@ -11,3 +11,4 @@ export * from "./reward";
 export * from "./qr";
 export * from "./notification";
 export * from "./audit";
+export * from "./apiErrors";

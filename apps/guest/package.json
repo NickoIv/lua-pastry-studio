@@ -11,16 +11,19 @@
   },
   "dependencies": {
     "@lua/config": "workspace:*",
+    "@lua/data-server": "workspace:*",
     "@lua/domain": "workspace:*",
     "@lua/i18n": "workspace:*",
     "@lua/types": "workspace:*",
     "@lua/ui": "workspace:*",
     "@lua/utils": "workspace:*",
+    "qrcode": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router-dom": "catalog:"
   },
   "devDependencies": {
+    "@types/qrcode": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",

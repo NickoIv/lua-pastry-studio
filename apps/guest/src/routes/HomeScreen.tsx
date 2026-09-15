@@ -8,7 +8,7 @@ import {
   StarIcon,
 } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
-import { useMenu } from "../backend/hooks";
+import { useMenu } from "../data/hooks";
 import { LoyaltyBalanceCard } from "../components/LoyaltyBalanceCard";
 import { ProductCard } from "../components/ProductCard";
 import "./HomeScreen.css";

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AppHeader, EmptyState, SearchIcon, Skeleton } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
-import { useMenu } from "../backend/hooks";
+import { useMenu } from "../data/hooks";
 import { ProductCard } from "../components/ProductCard";
 import "./MenuScreen.css";
 

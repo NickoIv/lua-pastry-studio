@@ -39,3 +39,29 @@
   flex-direction: column;
   gap: var(--lua-space-sm);
 }
+
+.lua-scan__error {
+  margin: 0;
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  background: var(--lua-color-danger-soft);
+  color: var(--lua-color-danger);
+  border-radius: var(--lua-radius-md);
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+.lua-scan__manual {
+  display: flex;
+  gap: var(--lua-space-sm);
+}
+
+.lua-scan__manual-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-sm);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-sm);
+  font-size: var(--lua-text-sm);
+}

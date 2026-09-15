@@ -8,9 +8,12 @@ import {
   LogOutIcon,
   Skeleton,
 } from "@lua/ui";
+import { useNavigate } from "react-router-dom";
 import { useTranslation, SUPPORTED_LOCALES } from "@lua/i18n";
 import type { LocaleCode } from "@lua/types";
-import { useCustomerProfile } from "../backend/hooks";
+import { APP_CONFIG } from "@lua/config";
+import { useCustomerProfile } from "../data/hooks";
+import { useSession } from "../session/useSession";
 import "./ProfileScreen.css";
 
 const LOCALE_LABEL: Record<LocaleCode, string> = {
@@ -22,6 +25,15 @@ const LOCALE_LABEL: Record<LocaleCode, string> = {
 export function ProfileScreen() {
   const { t, locale, setLocale } = useTranslation();
   const profile = useCustomerProfile();
+  const { signOut } = useSession();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    if (APP_CONFIG.dataMode === "server") {
+      signOut();
+      navigate("/login");
+    }
+  }
 
   return (
     <div className="lua-profile">
@@ -72,7 +84,7 @@ export function ProfileScreen() {
         </div>
       </Card>
 
-      <button type="button" className="lua-profile__logout">
+      <button type="button" className="lua-profile__logout" onClick={handleLogout}>
         <LogOutIcon />
         {t("guest.profile.logout")}
       </button>

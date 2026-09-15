@@ -69,3 +69,35 @@
   font-size: var(--lua-text-xs);
   color: var(--lua-color-on-dark-text-muted);
 }
+
+.lua-login__form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-md);
+}
+
+.lua-login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+}
+
+.lua-login__field input {
+  height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-sm);
+  border: 1px solid var(--lua-color-on-dark-border);
+  border-radius: var(--lua-radius-sm);
+  background: var(--lua-color-on-dark-surface);
+  color: var(--lua-color-text-on-accent);
+  font-weight: 400;
+}
+
+.lua-login__error {
+  margin: 0;
+  color: var(--lua-color-on-dark-danger);
+  font-size: var(--lua-text-sm);
+}

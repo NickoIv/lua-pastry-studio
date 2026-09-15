@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppHeader, Button } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
-import { APP_CONFIG } from "@lua/config";
-import { useBackend, CURRENT_CUSTOMER_ID } from "../backend/useBackend";
-import { QrCodeArt } from "../components/QrCodeArt";
+import { useIssueIdentityToken } from "../data/hooks";
+import { QrImage } from "../components/QrImage";
 import "./QrScreen.css";
 
 interface RewardQrState {
@@ -26,7 +25,7 @@ function formatCountdown(totalSeconds: number): string {
 
 export function QrScreen() {
   const { t } = useTranslation();
-  const backend = useBackend();
+  const issueIdentityToken = useIssueIdentityToken();
   const navigate = useNavigate();
   const location = useLocation();
   const rewardState = location.state as RewardQrState | null;
@@ -39,37 +38,33 @@ export function QrScreen() {
   );
   const [remaining, setRemaining] = useState(0);
 
-  const issueIdentityToken = useCallback(async () => {
-    const token = await backend.qr.issueIdentityToken(
-      CURRENT_CUSTOMER_ID,
-      APP_CONFIG.qrTokenTtlSeconds,
-    );
-    setEncodedToken(token.encoded);
+  const refreshIdentityToken = useCallback(async () => {
+    const token = await issueIdentityToken();
+    setEncodedToken(token.token);
     setExpiresAt(token.expiresAt);
-  }, [backend]);
+  }, [issueIdentityToken]);
 
   useEffect(() => {
-    // issueIdentityToken awaits the mock QR service before setting state,
-    // so this is an ordinary "fetch on mount" effect, not a synchronous
+    // issueIdentityToken awaits the backend before setting state, so
+    // this is an ordinary "fetch on mount" effect, not a synchronous
     // render-phase update.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!rewardState) void issueIdentityToken();
-  }, [rewardState, issueIdentityToken]);
+    if (!rewardState) void refreshIdentityToken();
+  }, [rewardState, refreshIdentityToken]);
 
   useEffect(() => {
     if (!expiresAt) return;
     // Resyncs the visible countdown to the token's real expiresAt before
-    // starting the interval subscription below — the standard "sync on
-    // prop/dep change, then subscribe" effect shape.
+    // starting the interval subscription below.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRemaining(secondsLeft(expiresAt));
     const interval = setInterval(() => {
       const left = secondsLeft(expiresAt);
       setRemaining(left);
-      if (left === 0 && !rewardState) void issueIdentityToken();
+      if (left === 0 && !rewardState) void refreshIdentityToken();
     }, 1000);
     return () => clearInterval(interval);
-  }, [expiresAt, rewardState, issueIdentityToken]);
+  }, [expiresAt, rewardState, refreshIdentityToken]);
 
   const isReward = Boolean(rewardState);
   const isExpired = isReward && remaining === 0;
@@ -85,7 +80,7 @@ export function QrScreen() {
       <div
         className={`lua-qr-screen__code${isExpired ? " lua-qr-screen__code--expired" : ""}`}
       >
-        {encodedToken ? <QrCodeArt value={encodedToken} /> : null}
+        {encodedToken ? <QrImage value={encodedToken} /> : null}
       </div>
 
       <p className="lua-qr-screen__timer">
@@ -95,7 +90,7 @@ export function QrScreen() {
       </p>
 
       {!isReward ? (
-        <Button variant="secondary" onClick={() => void issueIdentityToken()}>
+        <Button variant="secondary" onClick={() => void refreshIdentityToken()}>
           {t("guest.qr.refresh")}
         </Button>
       ) : (
