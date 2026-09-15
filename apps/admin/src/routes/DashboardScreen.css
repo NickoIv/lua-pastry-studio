@@ -1,0 +1,12 @@
+.lua-dashboard__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--lua-space-md);
+  margin-bottom: var(--lua-space-2xl);
+}
+
+.lua-dashboard__section-title {
+  margin: 0 0 var(--lua-space-md);
+  font-size: var(--lua-text-lg);
+  font-weight: 700;
+}

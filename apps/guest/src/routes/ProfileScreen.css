@@ -1,0 +1,96 @@
+.lua-profile__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--lua-space-lg);
+  text-align: center;
+}
+
+.lua-profile__avatar {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--lua-radius-pill);
+  background: var(--lua-color-accent-soft);
+  color: var(--lua-color-accent-soft-text);
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-2xl);
+  margin-bottom: var(--lua-space-xs);
+}
+
+.lua-profile__name {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--lua-text-lg);
+}
+
+.lua-profile__phone {
+  margin: 0;
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-profile__menu {
+  margin: 0 var(--lua-space-lg);
+}
+
+.lua-profile__row {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-sm);
+  min-height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-md);
+}
+.lua-profile__row:not(:last-child) {
+  border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-profile__row-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--lua-color-text-muted);
+  flex-shrink: 0;
+}
+
+.lua-profile__row-label {
+  flex: 1;
+  font-size: var(--lua-text-sm);
+  font-weight: 500;
+}
+
+.lua-profile__row-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-profile__locale-select {
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-sm);
+  padding: 6px 8px;
+  background: var(--lua-color-surface);
+  font-size: var(--lua-text-xs);
+}
+
+.lua-profile__logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lua-space-xs);
+  width: calc(100% - 2 * var(--lua-space-lg));
+  margin: var(--lua-space-xl) var(--lua-space-lg) 0;
+  min-height: var(--lua-touch-target);
+  background: transparent;
+  border: none;
+  color: var(--lua-color-danger);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lua-profile__logout svg {
+  width: 18px;
+  height: 18px;
+}

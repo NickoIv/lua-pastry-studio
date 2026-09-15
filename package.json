@@ -1,0 +1,32 @@
+{
+  "name": "lua-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Lua Pastry Studio — unified platform (Guest, Staff, Admin)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:guest": "pnpm --filter @lua/guest dev",
+    "dev:staff": "pnpm --filter @lua/staff dev",
+    "dev:admin": "pnpm --filter @lua/admin dev",
+    "build": "pnpm -r run typecheck && pnpm -r --filter=./apps/* build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm -r --filter=./packages/* test:run"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "globals": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "packageManager": "pnpm@12.4.1"
+}

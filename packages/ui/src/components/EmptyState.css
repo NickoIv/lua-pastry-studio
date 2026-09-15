@@ -1,0 +1,36 @@
+.lua-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--lua-space-xs);
+  padding: var(--lua-space-2xl) var(--lua-space-lg);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-empty-state__icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--lua-space-xs);
+  color: var(--lua-color-text-faint);
+}
+.lua-empty-state__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.lua-empty-state__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--lua-color-text);
+}
+
+.lua-empty-state__description {
+  margin: 0;
+  font-size: var(--lua-text-sm);
+  max-width: 32ch;
+}
+
+.lua-empty-state__action {
+  margin-top: var(--lua-space-sm);
+}

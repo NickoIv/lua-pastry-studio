@@ -1,0 +1,33 @@
+.lua-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--lua-radius-pill);
+  font-size: var(--lua-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.lua-badge--neutral {
+  background: var(--lua-color-surface-alt);
+  color: var(--lua-color-text-muted);
+}
+.lua-badge--accent {
+  background: var(--lua-color-accent-soft);
+  color: var(--lua-color-accent-soft-text);
+}
+.lua-badge--success {
+  background: var(--lua-color-success-soft);
+  color: var(--lua-color-success);
+}
+.lua-badge--warning {
+  background: var(--lua-color-warning-soft);
+  color: var(--lua-color-warning);
+}
+.lua-badge--danger {
+  background: var(--lua-color-danger-soft);
+  color: var(--lua-color-danger);
+}

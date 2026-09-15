@@ -1,0 +1,122 @@
+.lua-club {
+  padding-bottom: var(--lua-space-lg);
+}
+
+.lua-club__balance-card {
+  margin: var(--lua-space-sm) var(--lua-space-lg) 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.lua-club__balance {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-3xl);
+}
+
+.lua-club__balance-label {
+  margin: 0 0 var(--lua-space-xs);
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-club__birthday-banner {
+  margin: var(--lua-space-md) var(--lua-space-lg) 0;
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  background: var(--lua-color-accent-soft);
+  color: var(--lua-color-accent-soft-text);
+  border-radius: var(--lua-radius-md);
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+.lua-club__section {
+  margin: var(--lua-space-xl) var(--lua-space-lg) 0;
+}
+
+.lua-club__error {
+  margin: 0 0 var(--lua-space-sm);
+  color: var(--lua-color-danger);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-club__rewards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-sm);
+}
+
+.lua-club__reward {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-sm);
+}
+
+.lua-club__reward-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--lua-radius-pill);
+  background: var(--lua-color-surface-alt);
+  color: var(--lua-color-accent);
+}
+.lua-club__reward-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lua-club__reward-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.lua-club__reward-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-club__reward-cost {
+  margin: 2px 0 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-club__history {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--lua-color-border);
+}
+
+.lua-club__history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  padding: var(--lua-space-sm) 0;
+  border-bottom: 1px solid var(--lua-color-border);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-club__history-reason {
+  color: var(--lua-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lua-club__history-points {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--lua-color-success);
+}
+
+.lua-club__history-points--negative {
+  color: var(--lua-color-danger);
+}

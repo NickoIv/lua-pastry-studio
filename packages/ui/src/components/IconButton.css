@@ -1,0 +1,29 @@
+.lua-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--lua-touch-target);
+  height: var(--lua-touch-target);
+  border-radius: var(--lua-radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--lua-duration-fast) var(--lua-ease-standard);
+}
+
+.lua-icon-button--ghost {
+  background: transparent;
+  color: var(--lua-color-text);
+}
+.lua-icon-button--ghost:hover {
+  background: var(--lua-color-surface-alt);
+}
+
+.lua-icon-button--solid {
+  background: var(--lua-color-surface);
+  border-color: var(--lua-color-border);
+  color: var(--lua-color-text);
+  box-shadow: var(--lua-shadow-sm);
+}
+.lua-icon-button--solid:hover {
+  background: var(--lua-color-surface-alt);
+}

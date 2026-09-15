@@ -1,0 +1,114 @@
+/*
+  Lua design tokens — the only place raw color/spacing values should
+  live. Components consume these as CSS custom properties so the
+  palette can be retuned in one file without touching component code.
+*/
+:root {
+  /* Color — warm, editorial pâtisserie palette */
+  --lua-color-bg: #faf6ef;
+  --lua-color-surface: #fffdfa;
+  --lua-color-surface-alt: #f1e8da;
+  --lua-color-surface-sunken: #ede2d2;
+  --lua-color-border: #e6dac7;
+  --lua-color-border-strong: #d8c8ae;
+
+  --lua-color-text: #251b16;
+  --lua-color-text-muted: #6f5f52;
+  --lua-color-text-faint: #9c8d7d;
+  --lua-color-text-on-accent: #fff8f2;
+
+  --lua-color-accent: #b0492e;
+  --lua-color-accent-strong: #8c3921;
+  --lua-color-accent-soft: #f3ddd0;
+  --lua-color-accent-soft-text: #7a3320;
+
+  --lua-color-success: #4d7a5b;
+  --lua-color-success-soft: #e2ecdf;
+  --lua-color-danger: #a53b34;
+  --lua-color-danger-soft: #f4ded9;
+  --lua-color-warning: #a3762f;
+  --lua-color-warning-soft: #f2e5cd;
+
+  --lua-color-focus-ring: #b0492e66;
+  --lua-color-overlay: rgba(37, 27, 22, 0.45);
+  --lua-color-skeleton: #ece1d1;
+
+  /* Dark/inverse surfaces — the staff login screen, the admin sidebar and
+     the home loyalty card all sit on the near-black text color instead
+     of the warm ivory background, so they need their own muted/border
+     shades rather than the light-surface tokens above. */
+  --lua-color-on-dark-text-muted: #cdbfb2;
+  --lua-color-on-dark-surface: #382c25;
+  --lua-color-on-dark-surface-alt: #4a3c32;
+  --lua-color-on-dark-border: #4a3c32;
+
+  /* Typography */
+  --lua-font-serif:
+    "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+  --lua-font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+
+  --lua-text-2xs: 0.6875rem;
+  --lua-text-xs: 0.75rem;
+  --lua-text-sm: 0.875rem;
+  --lua-text-md: 1rem;
+  --lua-text-lg: 1.125rem;
+  --lua-text-xl: 1.375rem;
+  --lua-text-2xl: 1.75rem;
+  --lua-text-3xl: 2.25rem;
+  --lua-text-4xl: 2.875rem;
+
+  --lua-leading-tight: 1.1;
+  --lua-leading-snug: 1.3;
+  --lua-leading-normal: 1.5;
+
+  /* Spacing (4px base scale) */
+  --lua-space-2xs: 0.25rem;
+  --lua-space-xs: 0.5rem;
+  --lua-space-sm: 0.75rem;
+  --lua-space-md: 1rem;
+  --lua-space-lg: 1.5rem;
+  --lua-space-xl: 2rem;
+  --lua-space-2xl: 3rem;
+  --lua-space-3xl: 4rem;
+
+  /* Radii — deliberately modest, not "rounded everything" */
+  --lua-radius-sm: 8px;
+  --lua-radius-md: 12px;
+  --lua-radius-lg: 18px;
+  --lua-radius-xl: 24px;
+  --lua-radius-pill: 999px;
+
+  /* Shadows — restrained, no glow/neon */
+  --lua-shadow-sm: 0 1px 2px rgba(37, 27, 22, 0.06);
+  --lua-shadow-md: 0 6px 20px rgba(37, 27, 22, 0.08);
+  --lua-shadow-lg: 0 16px 40px rgba(37, 27, 22, 0.12);
+
+  /* Motion */
+  --lua-duration-fast: 120ms;
+  --lua-duration-base: 200ms;
+  --lua-duration-slow: 320ms;
+  --lua-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --lua-touch-target: 44px;
+  --lua-bottom-nav-height: 64px;
+  --lua-app-header-height: 56px;
+  --lua-max-content-width: 480px;
+
+  /* z-index scale */
+  --lua-z-dropdown: 10;
+  --lua-z-sticky: 20;
+  --lua-z-overlay: 30;
+  --lua-z-modal: 40;
+  --lua-z-toast: 50;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lua-duration-fast: 0ms;
+    --lua-duration-base: 0ms;
+    --lua-duration-slow: 0ms;
+  }
+}

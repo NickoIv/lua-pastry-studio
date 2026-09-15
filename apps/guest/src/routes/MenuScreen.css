@@ -1,0 +1,73 @@
+.lua-menu {
+  padding-bottom: var(--lua-space-lg);
+}
+
+.lua-menu__search {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-xs);
+  margin: var(--lua-space-sm) var(--lua-space-lg) 0;
+  padding: 0 var(--lua-space-sm);
+  height: 44px;
+  background: var(--lua-color-surface);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-md);
+  color: var(--lua-color-text-faint);
+}
+
+.lua-menu__search svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.lua-menu__search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--lua-text-sm);
+  color: var(--lua-color-text);
+  min-width: 0;
+}
+
+.lua-menu__tabs {
+  display: flex;
+  gap: var(--lua-space-xs);
+  overflow-x: auto;
+  padding: var(--lua-space-md) var(--lua-space-lg);
+  scrollbar-width: none;
+}
+.lua-menu__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.lua-menu__tab {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 var(--lua-space-md);
+  border-radius: var(--lua-radius-pill);
+  border: 1px solid var(--lua-color-border);
+  background: var(--lua-color-surface);
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lua-menu__tab--active {
+  background: var(--lua-color-text);
+  border-color: var(--lua-color-text);
+  color: var(--lua-color-text-on-accent);
+}
+
+.lua-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--lua-space-sm);
+  padding: 0 var(--lua-space-lg);
+}
+
+.lua-menu__empty {
+  grid-column: 1 / -1;
+}

@@ -1,0 +1,16 @@
+.lua-qr-art {
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto;
+  padding: var(--lua-space-md);
+  background: #fff;
+  border-radius: var(--lua-radius-lg);
+  box-shadow: var(--lua-shadow-md);
+}
+
+.lua-qr-art__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  shape-rendering: crispEdges;
+}

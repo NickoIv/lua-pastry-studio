@@ -1,0 +1,13 @@
+.lua-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-md);
+  margin-bottom: var(--lua-space-xl);
+}
+
+.lua-page-header__title {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-2xl);
+}

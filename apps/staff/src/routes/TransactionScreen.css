@@ -1,0 +1,80 @@
+.lua-transaction {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-md);
+  padding: var(--lua-space-lg);
+}
+
+.lua-transaction__customer-name {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-xl);
+}
+
+.lua-transaction__customer-meta {
+  margin: 4px 0 var(--lua-space-sm);
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-transaction__customer-balance {
+  margin: 0;
+  font-weight: 700;
+}
+
+.lua-transaction__op-title {
+  margin: 0 0 var(--lua-space-sm);
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-transaction__op-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: var(--lua-text-sm);
+  border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-transaction__op-total {
+  font-weight: 700;
+  border-bottom: none;
+  margin-bottom: var(--lua-space-md);
+}
+
+.lua-transaction--success {
+  align-items: center;
+  text-align: center;
+  padding-top: var(--lua-space-3xl);
+  gap: var(--lua-space-sm);
+}
+
+.lua-transaction__success-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--lua-radius-pill);
+  background: var(--lua-color-success-soft);
+  color: var(--lua-color-success);
+  margin-bottom: var(--lua-space-sm);
+}
+.lua-transaction__success-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.lua-transaction__success-title {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-2xl);
+}
+
+.lua-transaction__success-balance {
+  margin: 0 0 var(--lua-space-lg);
+  color: var(--lua-color-text-muted);
+}

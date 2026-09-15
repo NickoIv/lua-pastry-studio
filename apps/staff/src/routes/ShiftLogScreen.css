@@ -1,0 +1,30 @@
+.lua-shift-log__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-sm);
+  padding: var(--lua-space-sm) var(--lua-space-lg) var(--lua-space-lg);
+}
+
+.lua-shift-log__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+}
+
+.lua-shift-log__reason {
+  margin: 0;
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+}
+
+.lua-shift-log__time {
+  margin: 2px 0 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-shift-log__points {
+  flex-shrink: 0;
+  font-weight: 700;
+}

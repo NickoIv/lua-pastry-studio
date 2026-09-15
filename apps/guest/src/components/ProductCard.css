@@ -1,0 +1,30 @@
+.lua-product-card {
+  overflow: hidden;
+}
+
+.lua-product-card__body {
+  padding: var(--lua-space-sm) var(--lua-space-sm) var(--lua-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lua-product-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 20px;
+}
+
+.lua-product-card__name {
+  margin: 2px 0 0;
+  font-weight: 600;
+  font-size: var(--lua-text-sm);
+  line-height: var(--lua-leading-snug);
+}
+
+.lua-product-card__price {
+  margin: 0;
+  font-size: var(--lua-text-sm);
+  color: var(--lua-color-text-muted);
+}

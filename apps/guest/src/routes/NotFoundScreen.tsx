@@ -1,0 +1,20 @@
+import { useNavigate } from "react-router-dom";
+import { Button, EmptyState, SearchIcon } from "@lua/ui";
+
+export function NotFoundScreen() {
+  const navigate = useNavigate();
+  return (
+    <div style={{ padding: "var(--lua-space-2xl) var(--lua-space-lg)" }}>
+      <EmptyState
+        icon={<SearchIcon />}
+        title="Страница не найдена"
+        description="Такой страницы не существует или она была перемещена."
+        action={
+          <Button variant="secondary" onClick={() => navigate("/")}>
+            На главную
+          </Button>
+        }
+      />
+    </div>
+  );
+}

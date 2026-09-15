@@ -1,0 +1,20 @@
+.lua-stat-card__label {
+  margin: 0 0 var(--lua-space-sm);
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-stat-card__value {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-2xl);
+}
+
+.lua-stat-card__hint {
+  margin: var(--lua-space-2xs) 0 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-muted);
+}

@@ -1,0 +1,17 @@
+.lua-image-surface {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: var(--lua-color-surface-alt);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-md);
+  overflow: hidden;
+}
+
+.lua-image-surface__mark {
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-sm);
+  letter-spacing: 0.18em;
+  color: var(--lua-color-text-faint);
+}

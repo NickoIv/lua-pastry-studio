@@ -1,0 +1,54 @@
+.lua-loyalty-settings {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-md);
+}
+
+.lua-loyalty-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+}
+
+.lua-loyalty-settings__field input {
+  height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-sm);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-sm);
+  font-weight: 400;
+}
+
+.lua-loyalty-settings__tiers {
+  border-top: 1px solid var(--lua-color-border);
+  padding-top: var(--lua-space-md);
+}
+
+.lua-loyalty-settings__tiers-title {
+  margin: 0 0 var(--lua-space-sm);
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-loyalty-settings__tier-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  font-size: var(--lua-text-sm);
+  padding: 4px 0;
+}
+
+.lua-loyalty-settings__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-md);
+}
+
+.lua-loyalty-settings__saved {
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-success);
+}

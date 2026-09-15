@@ -1,0 +1,25 @@
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { App } from "./App";
+import { BackendProvider } from "./backend/BackendProvider";
+import { SessionProvider } from "./session/SessionProvider";
+import { ErrorBoundary } from "./shell/ErrorBoundary";
+import "@lua/ui";
+
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("#root element not found");
+
+createRoot(rootElement).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <BackendProvider>
+        <SessionProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </SessionProvider>
+      </BackendProvider>
+    </ErrorBoundary>
+  </StrictMode>,
+);

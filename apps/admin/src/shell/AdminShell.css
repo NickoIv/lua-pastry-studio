@@ -1,0 +1,96 @@
+.lua-admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.lua-admin-shell__sidebar {
+  flex-shrink: 0;
+  width: 232px;
+  padding: var(--lua-space-lg) var(--lua-space-md);
+  background: var(--lua-color-text);
+  color: var(--lua-color-text-on-accent);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.lua-admin-shell__wordmark {
+  margin: 0 0 2px var(--lua-space-sm);
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-xl);
+  letter-spacing: 0.12em;
+  color: var(--lua-color-accent-soft);
+}
+
+.lua-admin-shell__subtitle {
+  margin: 0 0 var(--lua-space-lg) var(--lua-space-sm);
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-on-dark-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.lua-admin-shell__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lua-admin-shell__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-sm);
+  padding: var(--lua-space-sm);
+  border-radius: var(--lua-radius-md);
+  color: var(--lua-color-on-dark-text-muted);
+  text-decoration: none;
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+}
+
+.lua-admin-shell__nav-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.lua-admin-shell__nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lua-admin-shell__nav-item--active {
+  background: var(--lua-color-accent);
+  color: var(--lua-color-text-on-accent);
+}
+
+.lua-admin-shell__content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--lua-space-xl) var(--lua-space-2xl);
+}
+
+@media (max-width: 900px) {
+  .lua-admin-shell {
+    flex-direction: column;
+  }
+  .lua-admin-shell__sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    padding: var(--lua-space-md);
+  }
+  .lua-admin-shell__nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .lua-admin-shell__nav-item {
+    flex-shrink: 0;
+  }
+  .lua-admin-shell__nav-item span {
+    display: none;
+  }
+  .lua-admin-shell__content {
+    padding: var(--lua-space-lg);
+  }
+}

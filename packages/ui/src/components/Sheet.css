@@ -1,0 +1,57 @@
+.lua-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--lua-z-modal);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--lua-color-overlay);
+  animation: lua-sheet-fade var(--lua-duration-base) var(--lua-ease-standard);
+}
+
+.lua-sheet {
+  width: 100%;
+  max-width: var(--lua-max-content-width);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--lua-color-surface);
+  border-radius: var(--lua-radius-xl) var(--lua-radius-xl) 0 0;
+  padding: var(--lua-space-sm) var(--lua-space-lg)
+    calc(var(--lua-space-xl) + env(safe-area-inset-bottom, 0px));
+  box-shadow: var(--lua-shadow-lg);
+  animation: lua-sheet-rise var(--lua-duration-base) var(--lua-ease-standard);
+}
+
+.lua-sheet__grabber {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--lua-space-md);
+  border-radius: var(--lua-radius-pill);
+  background: var(--lua-color-border-strong);
+}
+
+.lua-sheet__title {
+  margin: 0 0 var(--lua-space-md);
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-xl);
+}
+
+@keyframes lua-sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lua-sheet-rise {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lua-sheet-overlay,
+  .lua-sheet {
+    animation: none;
+  }
+}

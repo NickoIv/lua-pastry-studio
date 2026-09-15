@@ -1,0 +1,74 @@
+.lua-home {
+  padding: var(--lua-space-lg) var(--lua-space-lg) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-xl);
+}
+
+.lua-home__hero {
+  padding-top: var(--lua-space-md);
+}
+
+.lua-home__eyebrow {
+  margin: 0 0 var(--lua-space-xs);
+  font-size: var(--lua-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lua-color-accent);
+}
+
+.lua-home__title {
+  margin: 0 0 var(--lua-space-sm);
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-3xl);
+  line-height: var(--lua-leading-tight);
+}
+
+.lua-home__subtitle {
+  margin: 0;
+  color: var(--lua-color-text-muted);
+  max-width: 40ch;
+}
+
+.lua-home__see-all {
+  background: none;
+  border: none;
+  color: var(--lua-color-accent);
+  font-weight: 600;
+  font-size: var(--lua-text-sm);
+  cursor: pointer;
+  padding: var(--lua-space-2xs) 0;
+}
+
+.lua-home__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--lua-space-sm);
+}
+
+.lua-home__collections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-sm);
+}
+
+.lua-home__collection {
+  overflow: hidden;
+}
+
+.lua-home__collection-body {
+  padding: var(--lua-space-md);
+}
+
+.lua-home__collection-name {
+  margin: 0 0 4px;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-lg);
+}
+
+.lua-home__collection-desc {
+  margin: 0;
+  font-size: var(--lua-text-sm);
+  color: var(--lua-color-text-muted);
+}

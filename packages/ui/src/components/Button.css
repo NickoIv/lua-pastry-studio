@@ -1,0 +1,80 @@
+.lua-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lua-space-xs);
+  border: 1px solid transparent;
+  border-radius: var(--lua-radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--lua-duration-fast) var(--lua-ease-standard),
+    border-color var(--lua-duration-fast) var(--lua-ease-standard),
+    opacity var(--lua-duration-fast) var(--lua-ease-standard);
+  white-space: nowrap;
+}
+
+.lua-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lua-button--md {
+  min-height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-lg);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-button--lg {
+  min-height: 52px;
+  padding: 0 var(--lua-space-xl);
+  font-size: var(--lua-text-md);
+}
+
+.lua-button--full {
+  width: 100%;
+}
+
+.lua-button--primary {
+  background: var(--lua-color-accent);
+  color: var(--lua-color-text-on-accent);
+}
+.lua-button--primary:hover:not(:disabled) {
+  background: var(--lua-color-accent-strong);
+}
+
+.lua-button--secondary {
+  background: var(--lua-color-surface);
+  border-color: var(--lua-color-border-strong);
+  color: var(--lua-color-text);
+}
+.lua-button--secondary:hover:not(:disabled) {
+  background: var(--lua-color-surface-alt);
+}
+
+.lua-button--ghost {
+  background: transparent;
+  color: var(--lua-color-text);
+}
+.lua-button--ghost:hover:not(:disabled) {
+  background: var(--lua-color-surface-alt);
+}
+
+.lua-button--destructive {
+  background: var(--lua-color-danger-soft);
+  color: var(--lua-color-danger);
+}
+.lua-button--destructive:hover:not(:disabled) {
+  background: var(--lua-color-danger);
+  color: var(--lua-color-text-on-accent);
+}
+
+.lua-button__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.lua-button__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

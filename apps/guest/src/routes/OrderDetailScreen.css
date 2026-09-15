@@ -1,0 +1,44 @@
+.lua-order-detail__body {
+  padding: var(--lua-space-sm) var(--lua-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-md);
+}
+
+.lua-order-detail__date {
+  margin: 0;
+  font-weight: 600;
+}
+
+.lua-order-detail__item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  padding: var(--lua-space-xs) 0;
+  font-size: var(--lua-text-sm);
+}
+.lua-order-detail__item:not(:last-child) {
+  border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-order-detail__summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--lua-space-2xs) 0;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-order-detail__total {
+  font-weight: 700;
+}
+
+.lua-order-detail__points {
+  color: var(--lua-color-success);
+  font-weight: 600;
+}
+
+.lua-order-detail__notfound {
+  padding: var(--lua-space-xl);
+  text-align: center;
+  color: var(--lua-color-text-muted);
+}

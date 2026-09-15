@@ -1,0 +1,38 @@
+.lua-data-table__scroll {
+  overflow-x: auto;
+  background: var(--lua-color-surface);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-lg);
+}
+
+.lua-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-data-table th {
+  text-align: left;
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lua-color-text-faint);
+  border-bottom: 1px solid var(--lua-color-border);
+  white-space: nowrap;
+}
+
+.lua-data-table td {
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  border-bottom: 1px solid var(--lua-color-border);
+  vertical-align: middle;
+}
+
+.lua-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.lua-data-table__cell--right {
+  text-align: right;
+}

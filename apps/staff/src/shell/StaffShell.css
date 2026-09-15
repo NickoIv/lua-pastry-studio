@@ -1,0 +1,33 @@
+.lua-staff-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.lua-staff-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--lua-space-sm) + env(safe-area-inset-top, 0px)) var(--lua-space-lg)
+    var(--lua-space-sm);
+  border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-staff-shell__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-sm);
+}
+
+.lua-staff-shell__name {
+  margin: 0;
+  font-weight: 700;
+}
+
+.lua-staff-shell__content {
+  flex: 1;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}

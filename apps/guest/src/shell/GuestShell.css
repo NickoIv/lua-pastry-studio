@@ -1,0 +1,13 @@
+.lua-guest-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.lua-guest-shell__content {
+  max-width: var(--lua-max-content-width);
+  margin: 0 auto;
+  padding-bottom: calc(
+    var(--lua-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--lua-space-xl)
+  );
+  padding-top: env(safe-area-inset-top, 0px);
+}

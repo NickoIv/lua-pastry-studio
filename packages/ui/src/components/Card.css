@@ -1,0 +1,32 @@
+.lua-card {
+  background: var(--lua-color-surface);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-lg);
+  box-shadow: var(--lua-shadow-sm);
+}
+
+.lua-card--padding-none {
+  padding: 0;
+}
+.lua-card--padding-sm {
+  padding: var(--lua-space-sm);
+}
+.lua-card--padding-md {
+  padding: var(--lua-space-lg);
+}
+.lua-card--padding-lg {
+  padding: var(--lua-space-xl);
+}
+
+.lua-card--interactive {
+  cursor: pointer;
+  transition:
+    box-shadow var(--lua-duration-base) var(--lua-ease-standard),
+    transform var(--lua-duration-base) var(--lua-ease-standard);
+}
+.lua-card--interactive:hover {
+  box-shadow: var(--lua-shadow-md);
+}
+.lua-card--interactive:active {
+  transform: scale(0.99);
+}

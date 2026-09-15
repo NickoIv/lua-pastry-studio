@@ -1,0 +1,51 @@
+.lua-settings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--lua-space-lg);
+  align-items: start;
+}
+
+.lua-settings__card-title {
+  margin: 0 0 var(--lua-space-md);
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-settings__locations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-md);
+}
+
+.lua-settings__location-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+}
+
+.lua-settings__location-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-settings__location-address {
+  margin: 2px 0 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-settings__kv {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--lua-space-xs) 0;
+  font-size: var(--lua-text-sm);
+  border-bottom: 1px solid var(--lua-color-border);
+}
+.lua-settings__kv:last-child {
+  border-bottom: none;
+}

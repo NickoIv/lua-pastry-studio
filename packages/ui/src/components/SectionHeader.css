@@ -1,0 +1,29 @@
+.lua-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--lua-space-md);
+  margin-bottom: var(--lua-space-md);
+}
+
+.lua-section-header__eyebrow {
+  margin: 0 0 var(--lua-space-2xs);
+  font-size: var(--lua-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lua-color-accent);
+}
+
+.lua-section-header__title {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-weight: 600;
+  font-size: var(--lua-text-xl);
+  line-height: var(--lua-leading-snug);
+  color: var(--lua-color-text);
+}
+
+.lua-section-header__action {
+  flex-shrink: 0;
+}
