@@ -31,6 +31,8 @@ export const API_ERROR_CODES = [
   "STAFF_NOT_FOUND",
   "OWNER_PROTECTED",
   "CUSTOMER_NOT_FOUND",
+  "MEDIA_ASSET_IN_USE",
+  "MEDIA_ASSET_NOT_FOUND",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -68,6 +70,8 @@ export const API_ERROR_MESSAGES_RU: Record<ApiErrorCode, string> = {
   STAFF_NOT_FOUND: "Сотрудник не найден.",
   OWNER_PROTECTED: "Учётную запись владельца нельзя изменить через этот экран.",
   CUSTOMER_NOT_FOUND: "Клиент не найден.",
+  MEDIA_ASSET_IN_USE: "Изображение сейчас используется — замените его в этих карточках, чтобы удалить.",
+  MEDIA_ASSET_NOT_FOUND: "Изображение не найдено.",
 };
 
 export function isApiErrorCode(value: string): value is ApiErrorCode {

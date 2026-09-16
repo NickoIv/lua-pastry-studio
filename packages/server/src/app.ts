@@ -59,7 +59,7 @@ export function createApp() {
     res
       .status(appError.status)
       .json({
-        error: { code: appError.code, message: API_ERROR_MESSAGES_RU[appError.code] },
+        error: { code: appError.code, message: appError.detail ?? API_ERROR_MESSAGES_RU[appError.code] },
       });
   };
   app.use(errorHandler);

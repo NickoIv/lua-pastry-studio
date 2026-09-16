@@ -37,6 +37,11 @@
   overflow-x: auto;
   padding: var(--lua-space-md) var(--lua-space-lg);
   scrollbar-width: none;
+  /* A scrollable chip row's last visible item otherwise gets a hard,
+     mid-glyph clip at the viewport edge, which reads as broken layout
+     rather than "swipe for more" — a soft fade is the standard fix. */
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
 }
 .lua-menu__tabs::-webkit-scrollbar {
   display: none;

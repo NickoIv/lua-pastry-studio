@@ -12,6 +12,7 @@ export interface ProductRow {
   price_minor_units: number;
   currency: string;
   image_url: string | null;
+  media_asset_id: string | null;
   allergens: string[];
   is_seasonal: boolean;
   is_new: boolean;
@@ -26,6 +27,7 @@ export function mapProduct(row: ProductRow) {
     description: row.description,
     price: toMoney(row.price_minor_units, row.currency),
     imageUrl: row.image_url ?? undefined,
+    mediaAssetId: row.media_asset_id ?? undefined,
     allergens: row.allergens,
     isSeasonal: row.is_seasonal,
     isNew: row.is_new,
@@ -55,6 +57,7 @@ export interface CollectionRow {
   name: Record<string, string>;
   description: Record<string, string> | null;
   image_url: string | null;
+  media_asset_id: string | null;
   starts_at: string | null;
   ends_at: string | null;
   featured: boolean;
@@ -67,6 +70,7 @@ export function mapCollection(row: CollectionRow) {
     name: row.name,
     description: row.description ?? undefined,
     imageUrl: row.image_url ?? undefined,
+    mediaAssetId: row.media_asset_id ?? undefined,
     startsAt: row.starts_at ?? undefined,
     endsAt: row.ends_at ?? undefined,
     featured: row.featured,

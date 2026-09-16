@@ -1,5 +1,9 @@
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import { deleteUploadedImage, UPLOAD_ROOT } from "../src/media";
 import { app, resetDatabase, SEED } from "./helpers";
 
 async function loginStaff(email: string, password: string) {
@@ -126,5 +130,186 @@ describe("Admin media upload", () => {
       .field("kind", "product")
       .attach("file", pngBuffer(), { filename: "test.png", contentType: "image/png" });
     expect(res.status).toBe(401);
+  });
+});
+
+describe("deleteUploadedImage — path safety", () => {
+  it("refuses to unlink a path that normalizes outside the upload root", async () => {
+    // A relativePath only ever comes from what this module itself
+    // generated and stored (see packages/server/src/media.ts), but this
+    // proves the defense-in-depth check holds even if a row were ever
+    // corrupted or hand-edited to contain a traversal sequence. Uses the
+    // OS temp dir (not a path under the repo) so a failed check can't
+    // leave stray files behind for git to notice.
+    const outsideDir = path.join(os.tmpdir(), "lua-media-safety-test");
+    mkdirSync(outsideDir, { recursive: true });
+    const canary = path.join(outsideDir, "canary.png");
+    writeFileSync(canary, "not a real image");
+
+    try {
+      const traversal = path.relative(UPLOAD_ROOT, canary);
+      await deleteUploadedImage(traversal);
+      expect(existsSync(canary)).toBe(true);
+    } finally {
+      rmSync(outsideDir, { recursive: true, force: true });
+    }
+  });
+});
+
+const COFFEE_CATEGORY_ID = "20000000-0000-0000-0000-000000000001";
+
+describe("Media asset FK — products/collections reference media_asset_id", () => {
+  beforeAll(() => {
+    resetDatabase();
+  });
+
+  async function uploadAsset(token: string, kind: "product" | "collection") {
+    const res = await request(app)
+      .post("/api/admin/media")
+      .set("Authorization", `Bearer ${token}`)
+      .field("kind", kind)
+      .attach("file", pngBuffer(), { filename: "test.png", contentType: "image/png" });
+    expect(res.status).toBe(201);
+    return res.body as { id: string; url: string };
+  }
+
+  it("creating a product with an uploaded image's URL links it to that media asset", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "product");
+
+    const res = await request(app)
+      .post("/api/admin/products")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        name: { ru: "Миндальный круассан" },
+        categoryId: COFFEE_CATEGORY_ID,
+        price: 1500,
+        imageUrl: asset.url,
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.mediaAssetId).toBe(asset.id);
+    expect(res.body.imageUrl).toBe(asset.url);
+  });
+
+  it("a hand-pasted external image URL never links to a media asset", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const res = await request(app)
+      .post("/api/admin/products")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        name: { ru: "Внешнее фото" },
+        categoryId: COFFEE_CATEGORY_ID,
+        price: 1000,
+        imageUrl: "https://example.com/photo.jpg",
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.mediaAssetId).toBeUndefined();
+    expect(res.body.imageUrl).toBe("https://example.com/photo.jpg");
+  });
+
+  it("updating a product's imageUrl to an uploaded asset's URL re-links the FK, and clearing it un-links", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "product");
+    const created = await request(app)
+      .post("/api/admin/products")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: { ru: "Тест FK" }, categoryId: COFFEE_CATEGORY_ID, price: 1000 });
+    expect(created.body.mediaAssetId).toBeUndefined();
+
+    const linked = await request(app)
+      .patch(`/api/admin/products/${created.body.id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ imageUrl: asset.url });
+    expect(linked.body.mediaAssetId).toBe(asset.id);
+
+    const unlinked = await request(app)
+      .patch(`/api/admin/products/${created.body.id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ imageUrl: null });
+    expect(unlinked.body.mediaAssetId).toBeUndefined();
+    expect(unlinked.body.imageUrl).toBeUndefined();
+  });
+
+  it("a collection referencing an uploaded image links to that media asset", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "collection");
+    const res = await request(app)
+      .post("/api/admin/collections")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: { ru: "Книжная коллекция" }, imageUrl: asset.url });
+    expect(res.status).toBe(201);
+    expect(res.body.mediaAssetId).toBe(asset.id);
+  });
+
+  it("a media asset still referenced by a product cannot be deleted, and names it in the message", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "product");
+    await request(app)
+      .post("/api/admin/products")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: { ru: "Миндальный круассан" }, categoryId: COFFEE_CATEGORY_ID, price: 1500, imageUrl: asset.url });
+
+    const del = await request(app).delete(`/api/admin/media/${asset.id}`).set("Authorization", `Bearer ${adminToken}`);
+    expect(del.status).toBe(409);
+    expect(del.body.error.code).toBe("MEDIA_ASSET_IN_USE");
+    expect(del.body.error.message).toContain("Миндальный круассан");
+
+    const served = await request(app).get(asset.url);
+    expect(served.status).toBe(200);
+  });
+
+  it("a media asset still referenced by a collection cannot be deleted", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "collection");
+    await request(app)
+      .post("/api/admin/collections")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: { ru: "Летняя коллекция" }, imageUrl: asset.url });
+
+    const del = await request(app).delete(`/api/admin/media/${asset.id}`).set("Authorization", `Bearer ${adminToken}`);
+    expect(del.status).toBe(409);
+    expect(del.body.error.code).toBe("MEDIA_ASSET_IN_USE");
+    expect(del.body.error.message).toContain("Летняя коллекция");
+  });
+
+  it("an unused media asset deletes safely, removing both the row and the file", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "product");
+
+    const beforeDelete = await request(app).get(asset.url);
+    expect(beforeDelete.status).toBe(200);
+
+    const del = await request(app).delete(`/api/admin/media/${asset.id}`).set("Authorization", `Bearer ${adminToken}`);
+    expect(del.status).toBe(204);
+
+    const afterDelete = await request(app).get(asset.url);
+    expect(afterDelete.status).toBe(404);
+  });
+
+  it("deleting an unknown media asset id returns MEDIA_ASSET_NOT_FOUND", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const del = await request(app)
+      .delete("/api/admin/media/00000000-0000-0000-0000-000000000000")
+      .set("Authorization", `Bearer ${adminToken}`);
+    expect(del.status).toBe(404);
+    expect(del.body.error.code).toBe("MEDIA_ASSET_NOT_FOUND");
+  });
+
+  it("after unlinking a product's image, the previously-attached asset can be deleted", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const asset = await uploadAsset(adminToken, "product");
+    const created = await request(app)
+      .post("/api/admin/products")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: { ru: "Временный товар" }, categoryId: COFFEE_CATEGORY_ID, price: 1000, imageUrl: asset.url });
+    expect(created.body.mediaAssetId).toBe(asset.id);
+
+    await request(app)
+      .patch(`/api/admin/products/${created.body.id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ imageUrl: null });
+
+    const del = await request(app).delete(`/api/admin/media/${asset.id}`).set("Authorization", `Bearer ${adminToken}`);
+    expect(del.status).toBe(204);
   });
 });

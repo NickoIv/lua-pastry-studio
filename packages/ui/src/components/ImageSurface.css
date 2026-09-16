@@ -16,9 +16,25 @@
   display: block;
 }
 
-.lua-image-surface__mark {
+.lua-image-surface__fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-image-surface__icon {
+  width: 28%;
+  min-width: 18px;
+  max-width: 40px;
+  aspect-ratio: 1 / 1;
+}
+
+.lua-image-surface__wordmark {
   font-family: var(--lua-font-serif);
-  font-size: var(--lua-text-sm);
-  letter-spacing: 0.18em;
+  font-size: var(--lua-text-xs);
+  letter-spacing: 0.04em;
   color: var(--lua-color-text-faint);
 }

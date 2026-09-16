@@ -441,10 +441,29 @@ and collections keep displaying an image through their existing
 `image_url` text column exactly as before (an admin can still paste an
 external URL by hand) — an upload just points that column at the
 asset's served URL, so there's one display semantic ("a URL string"),
-not a second parallel way to reference an image. `media_assets` itself
-is what makes an upload auditable and later removable; it is
-deliberately not wired up as a foreign key from `products`/`collections`
-this round (see Known limitations).
+not a second parallel way to reference an image.
+
+**Now a real FK, derived rather than dual-written**
+(`infra/db/migrations/019_media_asset_fk.sql`). `products.media_asset_id`
+and `collections.media_asset_id` reference `media_assets(id)`, but the
+API never accepts `mediaAssetId` as client input — `packages/server/src/routes/{adminCatalog,adminCollections}.ts#resolveMediaAssetId`
+recomputes it from `image_url` on every create/update, by matching the
+submitted URL back to an uploaded asset's served URL. A hand-pasted
+external URL simply resolves to `null`. That's what keeps `image_url`
+(what Guest/Staff/Admin actually render — no read query had to change)
+and `media_asset_id` (what governs deletion) from ever drifting apart:
+there's one value the client controls (`image_url`) and one value the
+server derives from it, never two independent fields a client could
+push out of sync.
+
+**Safe delete.** `DELETE /admin/media/:id` (`packages/server/src/routes/media.ts`)
+now performs a real delete — row and file — instead of only flipping
+`status`, but checks `media_asset_id` usage first and refuses with
+`MEDIA_ASSET_IN_USE` (409, naming the specific products/collections)
+if anything still points to it. The FK itself (plain `RESTRICT`, no
+`ON DELETE` clause) backs this up at the database layer independent of
+that pre-check, the same defense-in-depth shape as `CATEGORY_IN_USE`
+(§9b).
 
 **Upload pipeline** (`packages/server/src/media.ts` +
 `packages/server/src/routes/media.ts`, ADMIN/OWNER only, ~30/5min rate
@@ -534,13 +553,16 @@ and RLS policies in `infra/db/migrations` are close to what a
 
 - `packages/domain/tests` (18) + `packages/utils/tests` (8) — pure
   logic, no I/O, unchanged from the previous milestone.
-- `packages/server/tests` (78) — integration tests against the real
+- `packages/server/tests` (88) — integration tests against the real
   local Postgres (`pnpm test:server`): both loyalty scenarios end to
   end over real HTTP, QR expiry/reuse/invalid-token handling, RBAC
   (cross-customer data leakage, role enforcement, unauthenticated
   access), the Admin catalog CMS (create/persist, RBAC-forbidden,
   Guest-visibility, archive semantics, category delete-safety, audit
-  logging, reward-price snapshot), the rate limiter (blocked at the
+  logging, reward-price snapshot), the media asset FK (product/collection
+  linkage derived from `image_url`, external URLs never linking, safe
+  delete blocked-with-names when in use, hard delete when not, path-
+  traversal safety), the rate limiter (blocked at the
   limit, unaffected for a different customer), the audit log read
   endpoint (permissions, filtering, pagination), staff management
   (create/role-change/deactivate, OWNER protection proven both through
@@ -582,13 +604,15 @@ and RLS policies in `infra/db/migrations` are close to what a
   but a physical phone's Safari camera permission prompt and HTTPS
   requirements weren't exercised. `docs/LOCAL-BACKEND.md` §6 explains
   exactly what will and won't work and why.
-- **`media_assets` isn't a foreign key from `products`/`collections`.**
-  An upload sets the same plain `image_url` text column a pasted
-  external URL would (§9g) — deliberate, to avoid a schema migration
-  entangled with every existing catalog row, but it means there's no
-  DB-enforced link from "this product's current image" back to its
-  `media_assets` row, and no automatic cleanup of an asset when the
-  product that used it is later given a different image.
+- **No admin UI to browse/delete stored media assets.** `media_asset_id`
+  is now a real FK and `DELETE /admin/media/:id` is a real, usage-checked
+  delete (§9g), but nothing in Lua Admin's Product/Collection editors
+  calls it yet — removing an image from a product form only detaches it
+  (`imageUrl: null`), it doesn't free the underlying file. Actually
+  deleting a stored asset today is an API capability proven by
+  `packages/server/tests/media.test.ts`, not a screen a business owner
+  would find. A small "media library" list is the natural next surface,
+  deliberately out of scope for this round's presentation-polish pass.
 - **No owner-handover flow.** The one OWNER account is seeded and
   nothing in Lua Admin can create a second one or transfer the role —
   intentional (§9d), but a real deployment eventually needs some

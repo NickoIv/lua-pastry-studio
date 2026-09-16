@@ -34,15 +34,30 @@
 .lua-transaction__op-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  align-items: baseline;
+  padding: 8px 0;
   font-size: var(--lua-text-sm);
   border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-transaction__op-label {
+  color: var(--lua-color-text-muted);
+}
+
+.lua-transaction__op-value {
+  font-weight: 600;
+  text-align: right;
 }
 
 .lua-transaction__op-total {
   font-weight: 700;
   border-bottom: none;
   margin-bottom: var(--lua-space-md);
+  padding-top: var(--lua-space-sm);
+}
+
+.lua-transaction__op-total .lua-transaction__op-label {
+  color: var(--lua-color-text);
 }
 
 .lua-transaction--success {
@@ -104,14 +119,40 @@
 .lua-transaction__order-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: var(--lua-space-sm);
-  padding: var(--lua-space-sm);
+  padding: var(--lua-space-sm) var(--lua-space-md);
   border: 1px solid var(--lua-color-border);
   border-radius: var(--lua-radius-md);
   background: var(--lua-color-surface);
   font-size: var(--lua-text-sm);
   text-align: left;
   cursor: pointer;
+}
+
+.lua-transaction__order-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lua-transaction__order-code {
+  font-weight: 700;
+}
+
+.lua-transaction__order-items {
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lua-transaction__order-total {
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .lua-transaction__order-row--selected {

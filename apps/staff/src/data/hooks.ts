@@ -19,6 +19,7 @@ export function useLocations() {
 
 export interface OpenOrderView {
   id: string;
+  externalOrderCode?: string;
   items: Array<{ productName: string; quantity: number }>;
   total: { currency: string; minorUnits: number };
 }
@@ -31,6 +32,7 @@ export function useOpenOrders() {
       const orders: ServerOrder[] = await apiClient.listOpenOrders();
       return orders.map((o) => ({
         id: o.id,
+        externalOrderCode: o.externalOrderCode,
         items: o.items.map((i) => ({ productName: i.productName, quantity: i.quantity })),
         total: o.total,
       }));

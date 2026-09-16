@@ -8,6 +8,7 @@ import { writeAuditLog } from "../audit";
 import { rateLimit, sessionKey } from "../rateLimit";
 import {
   assertUploadable,
+  deleteUploadedImage,
   MAX_UPLOAD_BYTES,
   readImageDimensions,
   saveUploadedImage,
@@ -118,6 +119,16 @@ mediaRouter.post(
   }),
 );
 
+/**
+ * Safe delete: an asset still referenced by a product or collection is
+ * never silently unlinked or removed. The `media_asset_id` FK
+ * (infra/db/migrations/019_media_asset_fk.sql) already refuses this at
+ * the database level (a plain RESTRICT, no ON DELETE clause), but the
+ * pre-check here exists to turn that into the friendly, specific
+ * message the task calls for — "used by: <names>" — instead of a raw
+ * `23503` making it back to the admin. Only once nothing references the
+ * asset does this remove both the row and the file on disk.
+ */
 mediaRouter.delete(
   "/admin/media/:id",
   adminOnly,
@@ -127,9 +138,37 @@ mediaRouter.delete(
       const existing = await client.query<MediaAssetRow>("select * from media_assets where id = $1", [
         req.params.id,
       ]);
-      if (existing.rowCount === 0) throw new AppError("VALIDATION", 422);
+      if (existing.rowCount === 0) throw new AppError("MEDIA_ASSET_NOT_FOUND", 404);
+      const asset = existing.rows[0]!;
 
-      await client.query("update media_assets set status = 'archived' where id = $1", [req.params.id]);
+      const [inUseProducts, inUseCollections] = await Promise.all([
+        client.query<{ name: Record<string, string> }>(
+          "select name from products where media_asset_id = $1",
+          [asset.id],
+        ),
+        client.query<{ name: Record<string, string> }>(
+          "select name from collections where media_asset_id = $1",
+          [asset.id],
+        ),
+      ]);
+      const names = [...inUseProducts.rows, ...inUseCollections.rows].map((r) => r.name.ru);
+      if (names.length > 0) {
+        throw new AppError(
+          "MEDIA_ASSET_IN_USE",
+          409,
+          `Изображение используется в: ${names.map((n) => `«${n}»`).join(", ")}. Замените или удалите изображение в этих карточках, чтобы его удалить.`,
+        );
+      }
+
+      try {
+        await client.query("delete from media_assets where id = $1", [asset.id]);
+      } catch (error) {
+        const pgError = error as { code?: string };
+        if (pgError.code === "23503") throw new AppError("MEDIA_ASSET_IN_USE", 409);
+        throw error;
+      }
+      await deleteUploadedImage(asset.path);
+
       await writeAuditLog(client, {
         action: "media.removed",
         actorStaffId: staffId,

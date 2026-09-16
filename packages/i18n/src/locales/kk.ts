@@ -28,7 +28,7 @@ const kk: Dictionary = {
   "nav.profile": "Профиль",
 
   "guest.home.heroEyebrow": "Lua Pastry Studio",
-  "guest.home.heroTitle": "Қайта оралғың келетін кофе мен десерттер",
+  "guest.home.heroTitle": "Десерттер, нан-тоқаш және кофе",
   "guest.home.heroSubtitle":
     "Алматыдағы студияларымызда әр таңертең дайындалатын жаңа өнім",
   "guest.home.mustTryTitle": "Міндетті түрде көру керек",

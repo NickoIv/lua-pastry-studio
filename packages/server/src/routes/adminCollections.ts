@@ -18,6 +18,16 @@ export const adminCollectionsRouter = Router();
 
 const adminOnly = requireRole("ADMIN", "OWNER");
 
+/** Same derivation as packages/server/src/routes/adminCatalog.ts — see its comment. */
+async function resolveMediaAssetId(client: pg.PoolClient, imageUrl: string | null) {
+  if (!imageUrl) return null;
+  const result = await client.query<{ id: string }>(
+    "select id from media_assets where url = $1 and kind = 'collection'",
+    [imageUrl],
+  );
+  return result.rows[0]?.id ?? null;
+}
+
 // ---- Collections -----------------------------------------------------
 
 adminCollectionsRouter.get(
@@ -71,9 +81,11 @@ adminCollectionsRouter.post(
     const staffId = req.session!.sub;
 
     const row = await withRole("app_admin", { staffId }, async (client) => {
+      const imageUrl = typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null;
+      const mediaAssetId = await resolveMediaAssetId(client, imageUrl);
       const result = await client.query<CollectionRow & { active: boolean }>(
-        `insert into collections (name, subtitle, description, active, featured, sort_order, starts_at, ends_at, image_url)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *`,
+        `insert into collections (name, subtitle, description, active, featured, sort_order, starts_at, ends_at, image_url, media_asset_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning *`,
         [
           JSON.stringify(name),
           body.subtitle !== undefined ? JSON.stringify(readOptionalLocalizedText(body.subtitle)) : null,
@@ -83,7 +95,8 @@ adminCollectionsRouter.post(
           readOptionalPositiveInt(body.sortOrder) ?? 0,
           typeof body.startsAt === "string" ? body.startsAt : null,
           typeof body.endsAt === "string" ? body.endsAt : null,
-          typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null,
+          imageUrl,
+          mediaAssetId,
         ],
       );
       const created = result.rows[0]!;
@@ -119,6 +132,8 @@ adminCollectionsRouter.patch(
       const active = body.active !== undefined ? readBoolean(body.active) : null;
       const featured = body.featured !== undefined ? readBoolean(body.featured) : null;
       const sortOrder = body.sortOrder !== undefined ? readOptionalPositiveInt(body.sortOrder) : null;
+      const imageUrl = typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null;
+      const mediaAssetId = body.imageUrl !== undefined ? await resolveMediaAssetId(client, imageUrl) : null;
 
       await client.query(
         `update collections set
@@ -131,8 +146,9 @@ adminCollectionsRouter.patch(
            starts_at = case when $9 then $10 else starts_at end,
            ends_at = case when $11 then $12 else ends_at end,
            image_url = case when $13 then $14 else image_url end,
+           media_asset_id = case when $13 then $15 else media_asset_id end,
            updated_at = now()
-         where id = $15`,
+         where id = $16`,
         [
           name ? JSON.stringify(name) : null,
           body.subtitle !== undefined,
@@ -147,7 +163,8 @@ adminCollectionsRouter.patch(
           body.endsAt !== undefined,
           typeof body.endsAt === "string" ? body.endsAt : null,
           body.imageUrl !== undefined,
-          typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null,
+          imageUrl,
+          mediaAssetId,
           req.params.id,
         ],
       );

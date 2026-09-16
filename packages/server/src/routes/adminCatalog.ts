@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type pg from "pg";
 import { queryAs, withRole } from "../db";
 import { asyncHandler } from "../asyncHandler";
 import { requireRole } from "../auth/middleware";
@@ -23,6 +24,23 @@ import {
 export const adminCatalogRouter = Router();
 
 const adminOnly = requireRole("ADMIN", "OWNER");
+
+/**
+ * media_asset_id is never accepted directly from the client — it's
+ * derived from image_url every time it changes, by matching it back to
+ * an uploaded asset's served URL (see infra/db/migrations/019_media_asset_fk.sql).
+ * A hand-pasted external URL simply resolves to no asset (null), same
+ * as removing the image entirely. This is what keeps the FK from ever
+ * drifting out of sync with what's actually displayed.
+ */
+async function resolveMediaAssetId(client: pg.PoolClient, kind: "product" | "collection", imageUrl: string | null) {
+  if (!imageUrl) return null;
+  const result = await client.query<{ id: string }>(
+    "select id from media_assets where url = $1 and kind = $2",
+    [imageUrl, kind],
+  );
+  return result.rows[0]?.id ?? null;
+}
 
 // ---- Categories --------------------------------------------------------
 
@@ -195,9 +213,11 @@ adminCatalogRouter.post(
     const staffId = req.session!.sub;
 
     const row = await withRole("app_admin", { staffId }, async (client) => {
+      const imageUrl = typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null;
+      const mediaAssetId = await resolveMediaAssetId(client, "product", imageUrl);
       const result = await client.query<ProductRow & { active: boolean }>(
-        `insert into products (category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try, active, image_url)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning *`,
+        `insert into products (category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try, active, image_url, media_asset_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning *`,
         [
           categoryId,
           JSON.stringify(name),
@@ -208,7 +228,8 @@ adminCatalogRouter.post(
           readBoolean(body.isNew),
           readBoolean(body.isMustTry),
           readBoolean(body.active, true),
-          typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null,
+          imageUrl,
+          mediaAssetId,
         ],
       );
       const created = result.rows[0]!;
@@ -260,6 +281,7 @@ adminCatalogRouter.patch(
       const isMustTry = body.isMustTry !== undefined ? readBoolean(body.isMustTry) : null;
       const active = body.active !== undefined ? readBoolean(body.active) : null;
       const imageUrl = body.imageUrl !== undefined ? (body.imageUrl as string | null) : undefined;
+      const mediaAssetId = imageUrl !== undefined ? await resolveMediaAssetId(client, "product", imageUrl) : null;
 
       const result = await client.query<ProductRow & { active: boolean }>(
         `update products set
@@ -273,8 +295,9 @@ adminCatalogRouter.patch(
            is_must_try = coalesce($8, is_must_try),
            active = coalesce($9, active),
            image_url = case when $10 then $11 else image_url end,
+           media_asset_id = case when $10 then $12 else media_asset_id end,
            updated_at = now()
-         where id = $12
+         where id = $13
          returning *`,
         [
           categoryId,
@@ -288,6 +311,7 @@ adminCatalogRouter.patch(
           active,
           imageUrl !== undefined,
           imageUrl ?? null,
+          mediaAssetId,
           req.params.id,
         ],
       );

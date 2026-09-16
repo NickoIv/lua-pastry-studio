@@ -11,10 +11,12 @@ export interface ImageSurfaceProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * Stand-in for a real product/hero photograph when there is no `src`
- * (or it failed to load) — a flat warm surface with a monogram instead
- * of pulling a random internet image (licensing risk) or ever rendering
- * a broken `<img>`. Once Admin's local media upload (§17/§18) supplies
- * a real image, this renders it.
+ * (or it failed to load) — a flat warm surface with a small abstract
+ * pastry mark instead of pulling a random internet image (licensing
+ * risk), ever rendering a broken `<img>`, or leaning on a giant "LUA"
+ * wordmark that reads as an unfinished placeholder rather than a
+ * designed empty state. Once a real photo is uploaded (or an admin
+ * pastes an external URL), this renders it.
  */
 export function ImageSurface({
   label,
@@ -40,8 +42,21 @@ export function ImageSurface({
         />
       ) : (
         <>
-          <span className="lua-image-surface__mark" aria-hidden="true">
-            LUA
+          <span className="lua-image-surface__fallback" aria-hidden="true">
+            <svg
+              className="lua-image-surface__icon"
+              viewBox="0 0 48 48"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              {/* An abstract plate/rim mark, deliberately not a face or food
+                  illustration — two off-center rings, like a plate glimpsed
+                  at an angle. */}
+              <circle cx="24" cy="25" r="15" />
+              <circle cx="24" cy="25" r="8.5" />
+            </svg>
+            <span className="lua-image-surface__wordmark">Lua</span>
           </span>
           {label ? <span className="lua-visually-hidden">{label}</span> : null}
         </>

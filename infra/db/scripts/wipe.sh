@@ -11,7 +11,7 @@ psql -v ON_ERROR_STOP=1 -d "$PGDATABASE" -c "
   truncate table
     qr_sessions, audit_logs, loyalty_transactions, reward_redemptions,
     order_items, orders, rewards, collection_products, collections,
-    product_availability, products, product_categories,
+    product_availability, products, product_categories, media_assets,
     customer_profiles, staff_profiles, locations
   restart identity cascade;
 " >/dev/null

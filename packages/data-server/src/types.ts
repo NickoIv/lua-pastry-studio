@@ -103,6 +103,7 @@ export interface ServerProduct {
   description: LocalizedText;
   price: Money;
   imageUrl?: string;
+  mediaAssetId?: string;
   allergens: string[];
   isSeasonal: boolean;
   isNew: boolean;
@@ -117,6 +118,7 @@ export interface ServerCollection {
   subtitle?: LocalizedText;
   description?: LocalizedText;
   imageUrl?: string;
+  mediaAssetId?: string;
   startsAt?: string;
   endsAt?: string;
   featured: boolean;

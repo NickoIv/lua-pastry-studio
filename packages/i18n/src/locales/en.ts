@@ -23,7 +23,7 @@ const en: Dictionary = {
   "nav.profile": "Profile",
 
   "guest.home.heroEyebrow": "Lua Pastry Studio",
-  "guest.home.heroTitle": "Coffee and pastry worth coming back for",
+  "guest.home.heroTitle": "Desserts, pastry and coffee",
   "guest.home.heroSubtitle": "Fresh baking every morning at our Almaty studios",
   "guest.home.mustTryTitle": "Must Try",
   "guest.home.collectionsTitle": "Collections",

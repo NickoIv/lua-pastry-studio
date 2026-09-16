@@ -25,7 +25,7 @@ const ru = {
   "nav.profile": "Профиль",
 
   "guest.home.heroEyebrow": "Lua Pastry Studio",
-  "guest.home.heroTitle": "Кофе и десерты, которым отвечают взаимностью",
+  "guest.home.heroTitle": "Десерты, выпечка и кофе",
   "guest.home.heroSubtitle": "Свежая выпечка каждое утро в наших студиях в Алматы",
   "guest.home.mustTryTitle": "Must Try",
   "guest.home.collectionsTitle": "Коллекции",

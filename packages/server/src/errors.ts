@@ -3,11 +3,14 @@ import { isApiErrorCode, type ApiErrorCode } from "@lua/types";
 export class AppError extends Error {
   readonly code: ApiErrorCode;
   readonly status: number;
+  /** Overrides the static API_ERROR_MESSAGES_RU text for this one response — used where the message needs request-specific detail (e.g. which products block a delete). */
+  readonly detail?: string;
 
-  constructor(code: ApiErrorCode, status = 400) {
+  constructor(code: ApiErrorCode, status = 400, detail?: string) {
     super(code);
     this.code = code;
     this.status = status;
+    this.detail = detail;
     this.name = "AppError";
   }
 }
@@ -28,6 +31,8 @@ const STATUS_BY_CODE: Partial<Record<ApiErrorCode, number>> = {
   STAFF_NOT_FOUND: 404,
   OWNER_PROTECTED: 403,
   CUSTOMER_NOT_FOUND: 404,
+  MEDIA_ASSET_IN_USE: 409,
+  MEDIA_ASSET_NOT_FOUND: 404,
   INTERNAL: 500,
 };
 

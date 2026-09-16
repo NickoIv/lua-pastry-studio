@@ -128,8 +128,17 @@ export function TransactionScreen() {
                   className={`lua-transaction__order-row${selectedOrderId === order.id ? " lua-transaction__order-row--selected" : ""}`}
                   onClick={() => setSelectedOrderId(order.id)}
                 >
-                  <span>{order.items.map((i) => i.productName).join(", ")}</span>
-                  <span>{(order.total.minorUnits / 100).toLocaleString("ru-RU")} ₸</span>
+                  <span className="lua-transaction__order-row-main">
+                    <span className="lua-transaction__order-code">
+                      {order.externalOrderCode ? `Заказ ${order.externalOrderCode}` : "Заказ"}
+                    </span>
+                    <span className="lua-transaction__order-items">
+                      {order.items.map((i) => i.productName).join(", ")}
+                    </span>
+                  </span>
+                  <span className="lua-transaction__order-total">
+                    {(order.total.minorUnits / 100).toLocaleString("ru-RU")} ₸
+                  </span>
                 </button>
               ))}
             </div>
@@ -147,9 +156,17 @@ export function TransactionScreen() {
       ) : summary.redemption ? (
         <Card className="lua-transaction__op">
           <p className="lua-transaction__op-title">Награда за баллы</p>
-          <div className="lua-transaction__op-row lua-transaction__op-total">
-            <span>{summary.redemption.rewardTitle.ru}</span>
+          <div className="lua-transaction__op-row">
+            <span className="lua-transaction__op-label">Награда</span>
+            <span className="lua-transaction__op-value">{summary.redemption.rewardTitle.ru}</span>
+          </div>
+          <div className="lua-transaction__op-row">
+            <span className="lua-transaction__op-label">Стоимость</span>
             <Points value={summary.redemption.pointsCost} />
+          </div>
+          <div className="lua-transaction__op-row lua-transaction__op-total">
+            <span className="lua-transaction__op-label">После операции</span>
+            <Points value={summary.customer.balance - summary.redemption.pointsCost} />
           </div>
           <Button fullWidth disabled={busy} onClick={() => void confirmRedeem()}>
             {busy ? "Подтверждение…" : "Подтвердить выдачу"}

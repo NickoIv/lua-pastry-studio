@@ -101,10 +101,13 @@ insert into staff_profiles (id, email, password_hash, display_name, role, locati
 on conflict (id) do update set display_name = excluded.display_name, role = excluded.role;
 
 -- ---- Demo guest accounts (LOCAL DEV ONLY) --------------------------------
-insert into customer_profiles (id, email, password_hash, first_name, phone, birth_date, home_location_id, favorite_product_ids, marketing_opt_in) values
+-- created_at is set explicitly (not left to default now()) so "В клубе
+-- с …" on Admin's Customer Detail shows a real-looking join date instead
+-- of always reading as "today", whatever day this seed happens to run.
+insert into customer_profiles (id, email, password_hash, first_name, phone, birth_date, home_location_id, favorite_product_ids, marketing_opt_in, created_at) values
   ('60000000-0000-0000-0000-000000000001', 'nikolay@lua.dev', crypt('LuaGuest123!', gen_salt('bf', 10)), 'Николай', '+7 701 234 56 78', '1993-06-18', '10000000-0000-0000-0000-000000000001',
-    array['30000000-0000-0000-0000-000000000002'::uuid, '30000000-0000-0000-0000-000000000008'::uuid], true),
-  ('60000000-0000-0000-0000-000000000002', 'aizhan@lua.dev', crypt('LuaGuest123!', gen_salt('bf', 10)), 'Айжан', '+7 707 555 12 34', null, '10000000-0000-0000-0000-000000000002', '{}', true)
+    array['30000000-0000-0000-0000-000000000002'::uuid, '30000000-0000-0000-0000-000000000008'::uuid], true, '2026-01-05T04:00:00Z'),
+  ('60000000-0000-0000-0000-000000000002', 'aizhan@lua.dev', crypt('LuaGuest123!', gen_salt('bf', 10)), 'Айжан', '+7 707 555 12 34', null, '10000000-0000-0000-0000-000000000002', '{}', true, '2026-02-14T10:00:00Z')
 on conflict (id) do update set first_name = excluded.first_name;
 
 -- ---- Николай's loyalty ledger — sums to exactly 3288, same worked
@@ -189,3 +192,22 @@ from products where id in (
   '30000000-0000-0000-0000-000000000008'  -- Маленький принц
 )
 and not exists (select 1 from order_items where order_id = '80000000-0000-0000-0000-000000000099');
+
+-- ---- Demo audit trail ---------------------------------------------------
+-- Without this, Admin's Journal (Audit Log) screen is empty on every
+-- fresh `pnpm db:reset`/`pnpm db:wipe` until a real admin action happens
+-- — a blank "Записей не найдено" screen isn't a realistic state to show
+-- during a presentation. These mirror actions the CMS/staff-management
+-- routes really write (packages/server/src/audit.ts), just backdated
+-- instead of generated live, spread across the same history the seeded
+-- orders/collections above already imply.
+insert into audit_logs (id, action, actor_staff_id, target_type, target_id, summary, metadata, created_at) values
+  ('90000000-0000-0000-0000-000000000001', 'catalog.collection.created', '50000000-0000-0000-0000-000000000003', 'collection', '40000000-0000-0000-0000-000000000002', 'Создана коллекция «Осенняя коллекция»', null, '2026-08-25T08:10:00Z'),
+  ('90000000-0000-0000-0000-000000000002', 'catalog.product.created', '50000000-0000-0000-0000-000000000003', 'product', '30000000-0000-0000-0000-000000000018', 'Создан товар «Тыквенный латте»', '{"priceMinorUnits": 230000}', '2026-08-25T08:14:00Z'),
+  ('90000000-0000-0000-0000-000000000003', 'staff.created', '50000000-0000-0000-0000-000000000004', 'staff', '50000000-0000-0000-0000-000000000002', 'Создан сотрудник «Ерлан» (SHIFT_MANAGER)', null, '2026-05-02T06:00:00Z'),
+  ('90000000-0000-0000-0000-000000000004', 'catalog.reward.updated', '50000000-0000-0000-0000-000000000003', 'reward', '70000000-0000-0000-0000-000000000004', 'Обновлена награда «Чизкейк Нью-Йорк»', '{"pointsCost": 3000}', '2026-07-30T13:22:00Z'),
+  ('90000000-0000-0000-0000-000000000005', 'loyalty.manual_adjustment', '50000000-0000-0000-0000-000000000003', 'customer', '60000000-0000-0000-0000-000000000002', 'Начислено 200 баллов вручную: извинение за задержку заказа', '{"points": 200}', '2026-08-02T09:40:00Z'),
+  ('90000000-0000-0000-0000-000000000006', 'customer.birthday_updated', '50000000-0000-0000-0000-000000000003', 'customer', '60000000-0000-0000-0000-000000000001', 'Обновлена дата рождения клиента', null, '2026-09-01T11:05:00Z'),
+  ('90000000-0000-0000-0000-000000000007', 'reward.redemption.fulfilled', '50000000-0000-0000-0000-000000000001', 'reward_redemption', '71000000-0000-0000-0000-000000000001', 'Выдана награда «Десерт «Маленький принц»»', '{"pointsCost": 2500}', '2026-07-22T09:31:00Z'),
+  ('90000000-0000-0000-0000-000000000008', 'catalog.availability.updated', '50000000-0000-0000-0000-000000000001', 'product', '30000000-0000-0000-0000-000000000004', 'Обновлена доступность товара', '{"inStock": false}', '2026-09-15T15:48:00Z')
+on conflict (id) do nothing;

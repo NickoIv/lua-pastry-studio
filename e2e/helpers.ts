@@ -26,6 +26,13 @@ export async function adminLogin(page: Page) {
   await page.waitForURL(`${ADMIN_URL}/`);
 }
 
+/** The staff login form's fields default to the barista demo account already filled in. */
+export async function staffLogin(page: Page) {
+  await page.goto(`${STAFF_URL}/login`);
+  await page.getByRole("button", { name: /начать смену/i }).click();
+  await page.waitForURL(`${STAFF_URL}/`);
+}
+
 /** Direct API login — used where the flow under test isn't the login form itself. */
 export async function apiLoginStaff(request: APIRequestContext, email: string, password: string) {
   const res = await request.post(`${API_URL}/auth/staff/login`, { data: { email, password } });
