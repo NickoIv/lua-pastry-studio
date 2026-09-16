@@ -5,8 +5,11 @@ import { requireCustomer, requireStaff } from "../auth/middleware";
 import { sessionRole } from "../auth/sessionRole";
 import { mapOrder, type OrderItemRow, type OrderRow } from "../mappers";
 import { AppError } from "../errors";
+import { rateLimit, sessionKey } from "../rateLimit";
 
 export const ordersRouter = Router();
+
+const confirmEarnRateLimit = rateLimit({ name: "earn-confirm", windowMs: 60_000, max: 30, keyFn: sessionKey });
 
 async function loadItems(
   role: Parameters<typeof queryAs>[0],
@@ -94,6 +97,7 @@ interface ConfirmEarnBody {
 ordersRouter.post(
   "/staff/orders/:orderId/confirm-earn",
   requireStaff,
+  confirmEarnRateLimit,
   asyncHandler(async (req, res) => {
     const body = req.body as ConfirmEarnBody;
     if (typeof body.customerId !== "string" || !body.customerId)

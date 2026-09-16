@@ -39,6 +39,7 @@ const ru = {
   "guest.menu.mustTry": "Must Try",
   "guest.menu.new": "Новинка",
   "guest.menu.seasonal": "Сезонное",
+  "guest.menu.outOfStock": "Нет в наличии",
   "guest.menu.allergens": "Аллергены",
   "guest.menu.empty": "В этой категории пока пусто",
 

@@ -1,6 +1,7 @@
 import { ApiClient, type ApiClientOptions } from "./ApiClient";
 import type {
   AdminDashboard,
+  ProductAvailabilityRow,
   ServerCategory,
   ServerCollection,
   ServerCustomer,
@@ -16,6 +17,51 @@ import type {
   ServerScanSummary,
   ServerStaff,
 } from "./types";
+import type { LocalizedText } from "@lua/types";
+
+export interface CategoryInput {
+  name: LocalizedText;
+  slug?: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface ProductInput {
+  categoryId: string;
+  name: LocalizedText;
+  description?: LocalizedText;
+  /** Whole KZT (major units) — the server converts to minor units. */
+  price: number;
+  allergens?: string[];
+  isSeasonal?: boolean;
+  isNew?: boolean;
+  isMustTry?: boolean;
+  active?: boolean;
+  imageUrl?: string | null;
+}
+
+export interface CollectionInput {
+  name: LocalizedText;
+  subtitle?: LocalizedText;
+  description?: LocalizedText;
+  active?: boolean;
+  featured?: boolean;
+  sortOrder?: number;
+  productIds?: string[];
+  startsAt?: string | null;
+  endsAt?: string | null;
+}
+
+export interface RewardInput {
+  title: LocalizedText;
+  description?: LocalizedText;
+  linkedProductId?: string | null;
+  pointsCost: number;
+  active?: boolean;
+  perCustomerLimit?: number | null;
+  perCustomerLimitWindowDays?: number | null;
+  stock?: number | null;
+}
 
 export interface CustomerSession {
   token: string;
@@ -158,5 +204,62 @@ export class LuaApiClient {
     }>,
   ) {
     return this.http.patch<ServerLoyaltyProgram>("/admin/loyalty/program", patch);
+  }
+
+  // ---- Admin: catalog CMS (categories/products/availability/collections/rewards) ----
+  listAdminCategories() {
+    return this.http.get<ServerCategory[]>("/admin/categories");
+  }
+  createCategory(input: CategoryInput) {
+    return this.http.post<ServerCategory>("/admin/categories", input);
+  }
+  updateCategory(id: string, patch: Partial<CategoryInput>) {
+    return this.http.patch<ServerCategory>(`/admin/categories/${id}`, patch);
+  }
+  deleteCategory(id: string) {
+    return this.http.delete(`/admin/categories/${id}`);
+  }
+
+  listAdminProducts() {
+    return this.http.get<ServerProduct[]>("/admin/products");
+  }
+  createProduct(input: ProductInput) {
+    return this.http.post<ServerProduct>("/admin/products", input);
+  }
+  updateProduct(id: string, patch: Partial<ProductInput>) {
+    return this.http.patch<ServerProduct>(`/admin/products/${id}`, patch);
+  }
+
+  getProductAvailability(productId: string) {
+    return this.http.get<ProductAvailabilityRow[]>(`/admin/products/${productId}/availability`);
+  }
+  setProductAvailability(
+    productId: string,
+    input: { locationId: string; inStock: boolean; dailyLimit?: number | null; unavailableReason?: string | null },
+  ) {
+    return this.http.put(`/admin/products/${productId}/availability`, input);
+  }
+
+  listAdminCollections() {
+    return this.http.get<ServerCollection[]>("/admin/collections");
+  }
+  createCollection(input: CollectionInput) {
+    return this.http.post<ServerCollection>("/admin/collections", input);
+  }
+  updateCollection(id: string, patch: Partial<CollectionInput>) {
+    return this.http.patch<ServerCollection>(`/admin/collections/${id}`, patch);
+  }
+  deleteCollection(id: string) {
+    return this.http.delete(`/admin/collections/${id}`);
+  }
+
+  listAdminRewards() {
+    return this.http.get<ServerReward[]>("/admin/rewards");
+  }
+  createReward(input: RewardInput) {
+    return this.http.post<ServerReward>("/admin/rewards", input);
+  }
+  updateReward(id: string, patch: Partial<RewardInput>) {
+    return this.http.patch<ServerReward>(`/admin/rewards/${id}`, patch);
   }
 }

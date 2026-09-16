@@ -8,6 +8,7 @@ import {
   MenuIcon,
   OrdersIcon,
   SettingsIcon,
+  StarIcon,
   UsersIcon,
 } from "@lua/ui";
 import { APP_CONFIG } from "@lua/config";
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Дашборд", icon: DashboardIcon, end: true },
   { to: "/menu", label: "Меню", icon: MenuIcon },
   { to: "/rewards", label: "Награды", icon: GiftIcon },
+  { to: "/collections", label: "Коллекции", icon: StarIcon },
   { to: "/loyalty", label: "Лояльность", icon: ClubIcon },
   { to: "/customers", label: "Клиенты", icon: UsersIcon },
   { to: "/orders", label: "Заказы", icon: OrdersIcon },

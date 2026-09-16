@@ -1,0 +1,71 @@
+.lua-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--lua-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--lua-space-lg);
+  background: var(--lua-color-overlay);
+  animation: lua-modal-fade var(--lua-duration-base) var(--lua-ease-standard);
+}
+
+.lua-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--lua-color-surface);
+  border-radius: var(--lua-radius-xl);
+  box-shadow: var(--lua-shadow-lg);
+  animation: lua-modal-rise var(--lua-duration-base) var(--lua-ease-standard);
+}
+
+.lua-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--lua-space-lg) var(--lua-space-lg) var(--lua-space-md);
+  border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-modal__title {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-xl);
+}
+
+.lua-modal__content {
+  padding: var(--lua-space-lg);
+  overflow-y: auto;
+}
+
+.lua-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--lua-space-sm);
+  padding: var(--lua-space-md) var(--lua-space-lg);
+  border-top: 1px solid var(--lua-color-border);
+}
+
+@keyframes lua-modal-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lua-modal-rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lua-modal-overlay,
+  .lua-modal {
+    animation: none;
+  }
+}

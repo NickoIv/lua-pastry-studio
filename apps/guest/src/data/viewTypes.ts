@@ -36,6 +36,13 @@ export interface GuestProduct {
   isMustTry: boolean;
   isNew: boolean;
   isSeasonal: boolean;
+  /**
+   * False when the product is active (still shown) but out of stock at
+   * every location right now — rendered as an explicit "Нет в наличии"
+   * treatment rather than hiding the product. See
+   * docs/ARCHITECTURE.md "Admin catalog CMS".
+   */
+  inStockAnywhere: boolean;
 }
 
 export interface GuestCategory {

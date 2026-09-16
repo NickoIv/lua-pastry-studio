@@ -23,6 +23,11 @@ export const API_ERROR_CODES = [
   "INVALID_CREDENTIALS",
   "VALIDATION",
   "INTERNAL",
+  "CATEGORY_NOT_FOUND",
+  "CATEGORY_IN_USE",
+  "PRODUCT_NOT_FOUND",
+  "COLLECTION_NOT_FOUND",
+  "RATE_LIMITED",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -52,6 +57,11 @@ export const API_ERROR_MESSAGES_RU: Record<ApiErrorCode, string> = {
   INVALID_CREDENTIALS: "Неверный email или пароль.",
   VALIDATION: "Проверьте введённые данные.",
   INTERNAL: "Что-то пошло не так. Попробуйте ещё раз.",
+  CATEGORY_NOT_FOUND: "Категория не найдена.",
+  CATEGORY_IN_USE: "В категории есть товары — сначала перенесите их в другую категорию.",
+  PRODUCT_NOT_FOUND: "Товар не найден.",
+  COLLECTION_NOT_FOUND: "Коллекция не найдена.",
+  RATE_LIMITED: "Слишком много попыток. Подождите немного и повторите.",
 };
 
 export function isApiErrorCode(value: string): value is ApiErrorCode {

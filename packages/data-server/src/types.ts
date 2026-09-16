@@ -39,6 +39,8 @@ export interface ServerCategory {
   name: LocalizedText;
   sortOrder: number;
   imageUrl?: string;
+  slug?: string;
+  active?: boolean;
 }
 
 export interface ServerProduct {
@@ -52,17 +54,30 @@ export interface ServerProduct {
   isSeasonal: boolean;
   isNew: boolean;
   isMustTry: boolean;
+  active?: boolean;
+  inStockAnywhere?: boolean;
 }
 
 export interface ServerCollection {
   id: string;
   name: LocalizedText;
+  subtitle?: LocalizedText;
   description?: LocalizedText;
   imageUrl?: string;
   startsAt?: string;
   endsAt?: string;
   featured: boolean;
   productIds: string[];
+  active?: boolean;
+  sortOrder?: number;
+}
+
+export interface ProductAvailabilityRow {
+  productId: string;
+  locationId: string;
+  inStock: boolean;
+  dailyLimit: number | null;
+  unavailableReason: string | null;
 }
 
 export interface ServerOrderItem {

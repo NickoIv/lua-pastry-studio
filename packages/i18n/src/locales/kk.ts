@@ -43,6 +43,7 @@ const kk: Dictionary = {
   "guest.menu.mustTry": "Міндетті түрде көру керек",
   "guest.menu.new": "Жаңа",
   "guest.menu.seasonal": "Маусымдық",
+  "guest.menu.outOfStock": "Қоймада жоқ",
   "guest.menu.allergens": "Аллергендер",
   "guest.menu.empty": "Бұл санатта әзірге бос",
 

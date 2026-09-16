@@ -3,6 +3,12 @@
 -- No real personal data: names/phones/emails are fixture data, and all
 -- passwords are clearly-labeled local dev accounts (see
 -- docs/LOCAL-BACKEND.md "Demo accounts").
+--
+-- IDs are stable across the whole file's history — packages/server/tests
+-- and the E2E smoke script pin specific UUIDs (Николай, LUA-1001, the
+-- "Маленький принц" reward, …). New rows added for the catalog-CMS/
+-- presentation-polish pass use fresh ids; nothing already referenced
+-- elsewhere was renumbered.
 
 -- ---- Locations -----------------------------------------------------------
 insert into locations (id, name, address, city, open_hours, phone, is_active) values
@@ -11,23 +17,41 @@ insert into locations (id, name, address, city, open_hours, phone, is_active) va
 on conflict (id) do update set name = excluded.name, address = excluded.address, is_active = excluded.is_active;
 
 -- ---- Categories ------------------------------------------------------------
-insert into product_categories (id, name, sort_order) values
-  ('20000000-0000-0000-0000-000000000001', '{"ru":"Кофе","kk":"Кофе","en":"Coffee"}', 1),
-  ('20000000-0000-0000-0000-000000000002', '{"ru":"Выпечка","kk":"Нан өнімдері","en":"Pastry"}', 2),
-  ('20000000-0000-0000-0000-000000000003', '{"ru":"Десерты","kk":"Десерттер","en":"Desserts"}', 3)
-on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order;
+insert into product_categories (id, name, slug, sort_order, active) values
+  ('20000000-0000-0000-0000-000000000001', '{"ru":"Кофе","kk":"Кофе","en":"Coffee"}', 'coffee', 1, true),
+  ('20000000-0000-0000-0000-000000000004', '{"ru":"Чай","kk":"Шай","en":"Tea"}', 'tea', 2, true),
+  ('20000000-0000-0000-0000-000000000002', '{"ru":"Выпечка","kk":"Нан өнімдері","en":"Pastry"}', 'pastry', 3, true),
+  ('20000000-0000-0000-0000-000000000003', '{"ru":"Десерты","kk":"Десерттер","en":"Desserts"}', 'desserts', 4, true),
+  ('20000000-0000-0000-0000-000000000005', '{"ru":"Сезонное","kk":"Маусымдық","en":"Seasonal"}', 'seasonal', 5, true)
+on conflict (id) do update set name = excluded.name, slug = excluded.slug, sort_order = excluded.sort_order;
 
 -- ---- Products (prices in KZT minor units: 1 ₸ = 100 minor units) -----
-insert into products (id, category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try) values
-  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '{"ru":"Эспрессо","kk":"Эспрессо","en":"Espresso"}', '{"ru":"Классический двойной эспрессо."}', 120000, '{}', false, false, false),
-  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '{"ru":"Капучино","kk":"Капучино","en":"Cappuccino"}', '{"ru":"Эспрессо с бархатной молочной пенкой."}', 190000, '{milk}', false, false, true),
-  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '{"ru":"Латте","kk":"Латте","en":"Latte"}', '{"ru":"Мягкий кофе с молоком."}', 210000, '{milk}', false, false, false),
-  ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '{"ru":"Круассан миндальный","kk":"Бадам круассаны","en":"Almond croissant"}', '{"ru":"Слоёное тесто, миндальный крем."}', 270000, '{gluten,nuts,milk,egg}', false, false, true),
-  ('30000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000002', '{"ru":"Круассан классический","kk":"Классикалық круассан","en":"Classic croissant"}', '{"ru":"Французский рецепт, 27 слоёв."}', 220000, '{gluten,milk,egg}', false, false, false),
-  ('30000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000003', '{"ru":"Мильфей","kk":"Мильфей","en":"Mille-feuille"}', '{"ru":"Хрустящие слои теста и заварной крем."}', 320000, '{gluten,milk,egg}', false, true, false),
-  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000003', '{"ru":"Тарт с малиной","kk":"Таңқурай тарты","en":"Raspberry tart"}', '{"ru":"Песочная основа, миндальный крем, малина."}', 340000, '{gluten,nuts,milk,egg}', true, false, false),
-  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Маленький принц»","kk":"«Кіші ханзада» десерты","en":"Le Petit Prince dessert"}', '{"ru":"Шоколадный мусс, карамелизированный орех, пралине."}', 350000, '{gluten,nuts,milk,egg}', false, false, true)
-on conflict (id) do update set name = excluded.name, price_minor_units = excluded.price_minor_units;
+insert into products (id, category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try, active) values
+  -- Coffee
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '{"ru":"Эспрессо","kk":"Эспрессо","en":"Espresso"}', '{"ru":"Классический двойной эспрессо из сезонного бленда."}', 120000, '{}', false, false, false, true),
+  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '{"ru":"Капучино","kk":"Капучино","en":"Cappuccino"}', '{"ru":"Эспрессо с бархатной молочной пенкой."}', 190000, '{milk}', false, false, true, true),
+  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '{"ru":"Латте","kk":"Латте","en":"Latte"}', '{"ru":"Мягкий кофе с молоком, наш самый популярный выбор."}', 210000, '{milk}', false, false, false, true),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000001', '{"ru":"Флэт уайт","kk":"Флэт уайт","en":"Flat white"}', '{"ru":"Двойной эспрессо и тонкий слой микропены."}', 220000, '{milk}', false, false, false, true),
+  -- Tea
+  ('30000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000004', '{"ru":"Чай улун","kk":"Улун шайы","en":"Oolong tea"}', '{"ru":"Листовой улун, мягкий и цветочный."}', 150000, '{}', false, false, false, true),
+  ('30000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000004', '{"ru":"Чай каркаде","kk":"Каркаде шайы","en":"Hibiscus tea"}', '{"ru":"Терпкий каркаде, подаётся горячим или со льдом."}', 140000, '{}', false, false, false, true),
+  -- Pastry
+  ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', '{"ru":"Круассан миндальный","kk":"Бадам круассаны","en":"Almond croissant"}', '{"ru":"Слоёное тесто, миндальный крем и хрустящая корочка."}', 270000, '{gluten,nuts,milk,egg}', false, false, true, true),
+  ('30000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000002', '{"ru":"Круассан классический","kk":"Классикалық круассан","en":"Classic croissant"}', '{"ru":"Французский рецепт, 27 слоёв масляного теста."}', 220000, '{gluten,milk,egg}', false, false, false, true),
+  ('30000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000002', '{"ru":"Синнабон","kk":"Синнабон","en":"Cinnamon roll"}', '{"ru":"Тёплая булочка с корицей и сливочной глазурью."}', 240000, '{gluten,milk,egg}', false, true, false, true),
+  ('30000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000002', '{"ru":"Багет с сыром и прошутто","kk":"Ірімшік пен прошуттосы бар багет","en":"Cheese and prosciutto baguette"}', '{"ru":"Хрустящий багет, выдержанный сыр, прошутто."}', 260000, '{gluten,milk}', false, false, false, true),
+  -- Desserts
+  ('30000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000003', '{"ru":"Мильфей","kk":"Мильфей","en":"Mille-feuille"}', '{"ru":"Хрустящие слои теста и ванильный заварной крем."}', 320000, '{gluten,milk,egg}', false, true, false, true),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000003', '{"ru":"Тарт с малиной","kk":"Таңқурай тарты","en":"Raspberry tart"}', '{"ru":"Песочная основа, миндальный крем и свежая малина."}', 340000, '{gluten,nuts,milk,egg}', true, false, false, true),
+  ('30000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000003', '{"ru":"Чизкейк Нью-Йорк","kk":"Нью-Йорк чизкейкі","en":"New York cheesecake"}', '{"ru":"Классический плотный чизкейк на песочной основе."}', 330000, '{gluten,milk,egg}', false, false, false, true),
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Маленький принц»","kk":"«Кіші ханзада» десерты","en":"“Le Petit Prince” dessert"}', '{"ru":"Шоколадный мусс, карамелизированный лесной орех и хрустящий пралине. Из коллекции The Book Collection."}', 350000, '{gluten,nuts,milk,egg}', false, false, true, true),
+  ('30000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Грозовой перевал»","kk":"«Дауылды асу» десерты","en":"“Wuthering Heights” dessert"}', '{"ru":"Тёмный шоколад, вересковый мёд и морская соль. Из коллекции The Book Collection."}', 360000, '{gluten,milk,egg}', false, true, false, true),
+  ('30000000-0000-0000-0000-000000000016', '20000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Цветы для Элджернона»","kk":"«Элджернонға арналған гүлдер» десерты","en":"“Flowers for Algernon” dessert"}', '{"ru":"Лёгкий бисквит, лаванда и белый шоколад. Из коллекции The Book Collection."}', 340000, '{gluten,milk,egg}', false, false, false, true),
+  ('30000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Властелин колец»","kk":"«Сақиналар әміршісі» десерты","en":"“The Lord of the Rings” dessert"}', '{"ru":"Медовый бисквит, карамель и жареный фундук. Из коллекции The Book Collection."}', 380000, '{gluten,nuts,milk,egg}', false, false, false, true),
+  -- Seasonal
+  ('30000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000005', '{"ru":"Тыквенный латте","kk":"Асқабақты латте","en":"Pumpkin latte"}', '{"ru":"Латте с тыквенной специей и корицей."}', 230000, '{milk}', true, false, false, true),
+  ('30000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000005', '{"ru":"Глинтвейн безалкогольный","kk":"Алкогольсіз глинтвейн","en":"Non-alcoholic mulled fruit drink"}', '{"ru":"Яблоко, апельсин и пряности, подаётся тёплым."}', 210000, '{}', true, false, false, true)
+on conflict (id) do update set name = excluded.name, price_minor_units = excluded.price_minor_units, active = excluded.active;
 
 insert into product_availability (product_id, location_id, in_stock, daily_limit)
 select p.id, l.id, true, null
@@ -35,15 +59,19 @@ from products p cross join locations l
 on conflict (product_id, location_id) do update set in_stock = excluded.in_stock;
 
 -- ---- Collections -----------------------------------------------------------
-insert into collections (id, name, description, featured, starts_at, ends_at) values
-  ('40000000-0000-0000-0000-000000000001', '{"ru":"The Book Collection","kk":"The Book Collection","en":"The Book Collection"}', '{"ru":"Десерты, вдохновлённые любимыми историями."}', true, null, null),
-  ('40000000-0000-0000-0000-000000000002', '{"ru":"Осенняя коллекция","kk":"Күз коллекциясы","en":"Autumn collection"}', '{"ru":"Сезонные вкусы: малина, орех и карамель."}', true, '2026-09-01T00:00:00Z', '2026-11-30T23:59:59Z')
-on conflict (id) do update set name = excluded.name;
+insert into collections (id, name, subtitle, description, active, sort_order, featured, starts_at, ends_at) values
+  ('40000000-0000-0000-0000-000000000001', '{"ru":"The Book Collection","kk":"The Book Collection","en":"The Book Collection"}', '{"ru":"Десерты, вдохновлённые любимыми историями"}', '{"ru":"Десерты, вдохновлённые любимыми историями."}', true, 1, true, null, null),
+  ('40000000-0000-0000-0000-000000000002', '{"ru":"Осенняя коллекция","kk":"Күз коллекциясы","en":"Autumn collection"}', '{"ru":"Сезонные вкусы: малина, тыква и пряности"}', '{"ru":"Сезонные вкусы: малина, орех, тыква и пряности."}', true, 2, true, '2026-09-01T00:00:00Z', '2026-11-30T23:59:59Z')
+on conflict (id) do update set name = excluded.name, subtitle = excluded.subtitle;
 
 insert into collection_products (collection_id, product_id) values
   ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000008'),
-  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000006'),
-  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000007')
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000015'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000016'),
+  ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000017'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000007'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000018'),
+  ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000019')
 on conflict do nothing;
 
 -- ---- Loyalty program (singleton) ---------------------------------------
@@ -56,7 +84,8 @@ on conflict (id) do update set earn_rate_per_currency_unit = excluded.earn_rate_
 insert into rewards (id, title, linked_product_id, points_cost, is_active, per_customer_limit, per_customer_limit_window_days) values
   ('70000000-0000-0000-0000-000000000001', '{"ru":"Капучино","kk":"Капучино","en":"Cappuccino"}', '30000000-0000-0000-0000-000000000002', 1000, true, 1, 1),
   ('70000000-0000-0000-0000-000000000002', '{"ru":"Круассан","kk":"Круассан","en":"Croissant"}', '30000000-0000-0000-0000-000000000005', 1800, true, 1, 1),
-  ('70000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Маленький принц»","kk":"«Кіші ханзада» десерты","en":"Le Petit Prince dessert"}', '30000000-0000-0000-0000-000000000008', 2500, true, 1, 7)
+  ('70000000-0000-0000-0000-000000000003', '{"ru":"Десерт «Маленький принц»","kk":"«Кіші ханзада» десерты","en":"“Le Petit Prince” dessert"}', '30000000-0000-0000-0000-000000000008', 2500, true, 1, 7),
+  ('70000000-0000-0000-0000-000000000004', '{"ru":"Чизкейк Нью-Йорк","kk":"Нью-Йорк чизкейкі","en":"New York cheesecake"}', '30000000-0000-0000-0000-000000000014', 3000, true, 1, 7)
 on conflict (id) do update set points_cost = excluded.points_cost, is_active = excluded.is_active;
 
 -- ---- Demo staff accounts (LOCAL DEV ONLY — see docs/LOCAL-BACKEND.md) --

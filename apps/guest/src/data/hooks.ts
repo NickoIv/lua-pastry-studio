@@ -60,14 +60,25 @@ export function useMenu() {
         apiClient.listProducts(),
         apiClient.listCollections(),
       ]);
-      return { categories, products, collections };
+      return {
+        categories,
+        products: products.map((p) => ({ ...p, inStockAnywhere: p.inStockAnywhere ?? true })),
+        collections,
+      };
     }
     const [categories, products, collections] = await Promise.all([
       backend.menu.listCategories(),
       backend.menu.listProducts(),
       backend.menu.listCollections(),
     ]);
-    return { categories, products, collections };
+    return {
+      categories,
+      products: products.map((p) => ({
+        ...p,
+        inStockAnywhere: p.availability.length === 0 || p.availability.some((a) => a.inStock),
+      })),
+      collections,
+    };
   }, [backend, session]);
 }
 

@@ -1,0 +1,81 @@
+.lua-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--lua-space-md);
+}
+
+.lua-form-field__label {
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-form-field input[type="text"],
+.lua-form-field input[type="number"],
+.lua-form-field input[type="url"],
+.lua-form-field select,
+.lua-form-field textarea {
+  width: 100%;
+  min-height: var(--lua-touch-target);
+  padding: var(--lua-space-xs) var(--lua-space-sm);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-sm);
+  font-size: var(--lua-text-sm);
+  font-family: inherit;
+  background: var(--lua-color-surface);
+  color: var(--lua-color-text);
+}
+
+.lua-form-field textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.lua-form-field input:focus-visible,
+.lua-form-field select:focus-visible,
+.lua-form-field textarea:focus-visible {
+  outline: 2px solid var(--lua-color-accent);
+  outline-offset: 1px;
+}
+
+.lua-form-field__hint {
+  margin: 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-form-field__error {
+  margin: 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-danger);
+  font-weight: 600;
+}
+
+.lua-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--lua-space-md);
+}
+
+@media (max-width: 480px) {
+  .lua-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lua-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-xs);
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  min-height: var(--lua-touch-target);
+}
+
+.lua-form-checkbox input {
+  width: 20px;
+  height: 20px;
+}

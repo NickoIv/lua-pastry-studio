@@ -4,8 +4,11 @@ import { AppError } from "../errors";
 import { asyncHandler } from "../asyncHandler";
 import { signSession } from "../auth/jwt";
 import { attachSession } from "../auth/middleware";
+import { rateLimit } from "../rateLimit";
 
 export const authRouter = Router();
+
+const loginRateLimit = rateLimit({ name: "login", windowMs: 60_000, max: 20 });
 
 interface LoginBody {
   email?: unknown;
@@ -26,6 +29,7 @@ function readCredentials(body: LoginBody): { email: string; password: string } {
 
 authRouter.post(
   "/auth/customer/login",
+  loginRateLimit,
   asyncHandler(async (req, res) => {
     const { email, password } = readCredentials(req.body as LoginBody);
     const result = await pool.query<{
@@ -52,6 +56,7 @@ authRouter.post(
 
 authRouter.post(
   "/auth/staff/login",
+  loginRateLimit,
   asyncHandler(async (req, res) => {
     const { email, password } = readCredentials(req.body as LoginBody);
     const result = await pool.query<{

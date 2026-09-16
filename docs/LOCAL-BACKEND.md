@@ -22,7 +22,7 @@ Instead:
   server (`packages/server`) instead of GoTrue/PostgREST. It still does
   real bcrypt-equivalent (pgcrypto `crypt()`) password checks, real JWTs,
   and real Postgres Row Level Security — see §5 below and
-  `docs/ARCHITECTURE.md` §13.
+  `docs/ARCHITECTURE.md` §6.
 
 If Docker becomes available later, the SQL schema and RLS policies in
 `infra/db/migrations` are what a `supabase init` project's migrations
@@ -105,8 +105,16 @@ VITE_LUA_DATA_MODE=server pnpm dev:staff   # http://localhost:5174
 VITE_LUA_DATA_MODE=server pnpm dev:admin   # http://localhost:5175
 ```
 
-Or copy `.env.example` to `.env` inside each `apps/*` directory with
-`VITE_LUA_DATA_MODE=server` so you don't have to repeat the env var.
+Or create a `.env.local` inside each `apps/*` directory (gitignored)
+with `VITE_LUA_DATA_MODE=server` and `VITE_LUA_API_URL=http://localhost:4000/api`
+so you don't have to repeat the env vars — this is what `pnpm e2e` (§8)
+expects to already be running.
+
+**Catalog editing (categories/products/availability/collections/rewards)
+in Lua Admin only works in server mode** — mock mode has no backend to
+persist writes to, so those screens gate their create/edit buttons on
+`isServerMode` and show a plain explanation instead of silently
+no-op'ing (`apps/admin/src/data/hooks.ts#requireServerMode`).
 
 ### Manual walkthrough
 
@@ -171,7 +179,7 @@ resolve/confirm code path a real camera scan would.
 ```bash
 pnpm test           # packages/domain + packages/utils — no DB needed
 pnpm test:server     # starts/migrates/seeds the DB, then packages/server's
-                      # integration tests (25 tests against the real Postgres)
+                      # integration tests (43 tests against the real Postgres)
 pnpm test:all        # both of the above
 pnpm verify          # typecheck + lint + test:all + build — the full gate
 ```
@@ -181,13 +189,31 @@ of every test file (`infra/db/scripts/wipe.sh` — see
 `packages/server/tests/helpers.ts`), so they're safe to run repeatedly
 and don't require a manual reset first.
 
+### End-to-end (Playwright)
+
+```bash
+pnpm db:reset                                  # start from known-good seed data
+pnpm dev:server & pnpm dev:guest & pnpm dev:staff & pnpm dev:admin &
+pnpm e2e:install    # once — downloads the Chromium build Playwright drives
+pnpm e2e            # runs e2e/*.spec.ts against the four processes above
+```
+
+This drives real browser sessions against the real backend — an Admin
+product-lifecycle flow through both the Admin and Guest UIs, the reward
+price-change snapshot through Guest's real redemption flow, and a
+presentation-smoke spec that (re)generates the 8 screenshots in
+`artifacts/presentation/`. Because it mutates real ledger/catalog rows
+(a requested-and-confirmed reward really does deduct points), run
+`pnpm db:wipe` afterward if you want the dev database back to pristine
+seed values.
+
 ## 9. Troubleshooting
 
 - **`pnpm db:start` hangs / "port already in use"** — something else is
   already listening on 54329. Check `lsof -i :54329`; if it's a stale
   `postgres` process from a previous session, `pnpm db:stop` first.
 - **`permission denied for table ...` from the API** — you're likely
-  looking at RLS working as intended (see `docs/ARCHITECTURE.md` §13),
+  looking at RLS working as intended (see `docs/ARCHITECTURE.md` §6),
   not a bug — check which role the failing query ran as.
 - **Guest/Staff/Admin show a blank "Не удалось связаться с сервером"
   error** — the API server isn't running, or `VITE_LUA_API_URL` doesn't

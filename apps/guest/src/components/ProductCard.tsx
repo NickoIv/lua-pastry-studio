@@ -5,9 +5,18 @@ import "./ProductCard.css";
 
 export function ProductCard({ product }: { product: GuestProduct }) {
   const { t, locale } = useTranslation();
+  const unavailable = !product.inStockAnywhere;
   return (
-    <Card padding="none" className="lua-product-card">
-      <ImageSurface aspectRatio="4 / 3" label={product.name[locale]} />
+    <Card
+      padding="none"
+      className={unavailable ? "lua-product-card lua-product-card--unavailable" : "lua-product-card"}
+    >
+      <div className="lua-product-card__media">
+        <ImageSurface aspectRatio="4 / 3" label={product.name[locale]} />
+        {unavailable ? (
+          <span className="lua-product-card__unavailable-tag">{t("guest.menu.outOfStock")}</span>
+        ) : null}
+      </div>
       <div className="lua-product-card__body">
         <div className="lua-product-card__badges">
           {product.isMustTry ? (

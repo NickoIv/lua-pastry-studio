@@ -7,8 +7,11 @@ import { mapReward, mapRedemption, type RewardRow, type RedemptionRow } from "..
 import { generateRawToken, digestToken } from "../qr";
 import { getQrTokenTtlSeconds } from "../loyaltyProgram";
 import { AppError } from "../errors";
+import { rateLimit, sessionKey } from "../rateLimit";
 
 export const rewardsRouter = Router();
+
+const redeemRateLimit = rateLimit({ name: "reward-redeem", windowMs: 60_000, max: 20, keyFn: sessionKey });
 
 rewardsRouter.get(
   "/rewards",
@@ -46,6 +49,7 @@ rewardsRouter.get(
 rewardsRouter.post(
   "/me/rewards/:rewardId/redeem",
   requireCustomer,
+  redeemRateLimit,
   asyncHandler(async (req, res) => {
     const customerId = req.session!.sub;
     const rewardId = req.params.rewardId;

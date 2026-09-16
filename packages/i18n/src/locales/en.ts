@@ -37,6 +37,7 @@ const en: Dictionary = {
   "guest.menu.mustTry": "Must Try",
   "guest.menu.new": "New",
   "guest.menu.seasonal": "Seasonal",
+  "guest.menu.outOfStock": "Out of stock",
   "guest.menu.allergens": "Allergens",
   "guest.menu.empty": "Nothing in this category yet",
 

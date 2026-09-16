@@ -5,6 +5,7 @@ import { LoginScreen } from "./routes/LoginScreen";
 import { DashboardScreen } from "./routes/DashboardScreen";
 import { MenuScreen } from "./routes/MenuScreen";
 import { RewardsScreen } from "./routes/RewardsScreen";
+import { CollectionsScreen } from "./routes/CollectionsScreen";
 import { LoyaltyScreen } from "./routes/LoyaltyScreen";
 import { CustomersScreen } from "./routes/CustomersScreen";
 import { OrdersScreen } from "./routes/OrdersScreen";
@@ -21,6 +22,7 @@ export function App() {
           <Route path="/" element={<DashboardScreen />} />
           <Route path="/menu" element={<MenuScreen />} />
           <Route path="/rewards" element={<RewardsScreen />} />
+          <Route path="/collections" element={<CollectionsScreen />} />
           <Route path="/loyalty" element={<LoyaltyScreen />} />
           <Route path="/customers" element={<CustomersScreen />} />
           <Route path="/orders" element={<OrdersScreen />} />

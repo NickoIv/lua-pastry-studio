@@ -262,6 +262,73 @@ code back into the frontend, and screens map it through
 text (e.g. `apps/guest/src/routes/ClubScreen.tsx`'s redeem-error
 handling).
 
+## 9b. Admin catalog CMS
+
+Lua Admin's Menu/Rewards/Collections screens are real CRUD against the
+real backend now, not read-only views — `infra/db/migrations/013_catalog_cms_columns.sql`
+adds `slug`/`active`/`updated_at` to categories and products,
+`unavailable_reason` to `product_availability`, and `subtitle`/`active`/
+`sort_order` to collections; `014_admin_catalog_rls.sql` grants
+`app_admin` write access and turns RLS on for these tables (previously
+disabled). `packages/server/src/routes/{adminCatalog,adminCollections}.ts`
+is the write surface, gated by `requireRole("ADMIN", "OWNER")` at the API
+layer _and_ by the RLS grants at the database layer — a bug in one
+doesn't save the other, same principle as §6.
+
+**Delete safety is deliberate, not uniform.** Products and rewards are
+archive-only: there is no DELETE grant for `app_admin` on either table
+at all (defense in depth beyond just omitting the route), because
+`order_items`/`reward_redemptions` reference them and losing that
+history would corrupt a real business's own records. Categories and
+collections _are_ hard-deletable — categories have no historical
+dependency of their own (a `23503` foreign-key violation from a
+category still holding products is mapped to a friendly
+`CATEGORY_IN_USE` 409, not a raw Postgres error), and collections are a
+pure presentation grouping.
+
+**Reward price changes never touch an existing redemption's cost.**
+`reward_redemptions.points_cost` is captured once at
+`request_reward_redemption` time (§3) and the Admin reward-update route
+only ever writes `rewards.points_cost` — it has no code path that
+touches `reward_redemptions` at all. `packages/server/tests/adminCatalog.test.ts`
+proves the full scenario: request a reward at its current price, change
+the price in Admin, confirm the pending redemption, and assert the
+ledger deduction is the _original_ price.
+
+**Availability vs. active are two different flags on purpose.**
+`active = false` means archived/discontinued — hidden everywhere,
+including Admin's default view. `product_availability.in_stock = false`
+for a given location means "temporarily out of stock at this location"
+— the product stays active and visible to Guest, just with an explicit
+"Нет в наличии" treatment (`apps/guest/src/components/ProductCard.tsx`)
+instead of disappearing, because a barista marking the last croissant
+sold out shouldn't make it look like the product was discontinued.
+`GET /api/menu/products` computes `inStockAnywhere` as `bool_or` across
+all locations so Guest only shows the tag when a product is out
+_everywhere_, not just at one location.
+
+Every write in both route files calls `writeAuditLog()`
+(`packages/server/src/audit.ts`) inside the same transaction — actor,
+action (from the typed `AUDIT_ACTIONS` union in `packages/types/src/audit.ts`),
+target type/id, and non-secret metadata. There's no `/admin/audit-log`
+read endpoint yet (see §12), so today this is proven by querying
+`audit_logs` directly in tests, not through the UI.
+
+## 9c. Rate limiting — dev-only, honestly
+
+`packages/server/src/rateLimit.ts` is a small in-memory fixed-window
+limiter applied to `auth` (login), `qr-issue`, `qr-resolve`,
+`reward-confirm`, and `earn-confirm`. It is explicitly **not** what a
+deployed service should use: state lives in one Node process's memory,
+so it resets on restart and doesn't work at all across multiple server
+instances behind a load balancer. A real deployment needs a shared
+store (Redis, or Postgres itself) keyed the same way. This exists to
+demonstrate the shape of the defense (and to have something
+`packages/server/tests/rateLimit.test.ts` can assert against — including
+a live test that a 31st request in a window is actually rejected while
+a different customer's requests are unaffected), not as a
+production-ready control.
+
 ## 10. Local backend infrastructure
 
 See `docs/LOCAL-BACKEND.md` for full operational detail. Summary: no
@@ -279,19 +346,28 @@ and RLS policies in `infra/db/migrations` are close to what a
 
 - `packages/domain/tests` (18) + `packages/utils/tests` (8) — pure
   logic, no I/O, unchanged from the previous milestone.
-- `packages/server/tests` (25) — integration tests against the real
+- `packages/server/tests` (43) — integration tests against the real
   local Postgres (`pnpm test:server`): both loyalty scenarios end to
-  end over real HTTP, QR expiry/reuse/invalid-token handling, and RBAC
+  end over real HTTP, QR expiry/reuse/invalid-token handling, RBAC
   (cross-customer data leakage, role enforcement, unauthenticated
-  access) — see `packages/server/tests/{flows,qr,security}.test.ts`.
+  access), the Admin catalog CMS (create/persist, RBAC-forbidden,
+  Guest-visibility, archive semantics, category delete-safety, audit
+  logging, reward-price snapshot), and the rate limiter (blocked at the
+  limit, unaffected for a different customer) — see
+  `packages/server/tests/{flows,qr,security,adminCatalog,rateLimit}.test.ts`.
   Each test file truncates and reseeds the database itself
   (`infra/db/scripts/wipe.sh`), so the suite is safe to re-run without a
   manual reset.
-- A Playwright smoke script (not checked into the repo as an automated
-  CI test — see Known limitations) drove real browser sessions for
-  Guest and Staff against the real backend end to end, confirming both
-  scenarios' exact numbers and that a genuinely-issued QR image
-  round-trips through a standard QR decoder.
+- `playwright.config.ts` + `e2e/*.spec.ts` — real Chromium sessions
+  against the real backend (`pnpm e2e`, after `pnpm db:reset` and the
+  four `pnpm dev:*` processes are running): an Admin product-lifecycle
+  flow proven through both the real Admin and Guest UIs, the reward
+  price-change snapshot proven through the real Guest redemption flow
+  plus direct API calls for the confirm step (deliberately not driven
+  through Staff's camera scanner — see `docs/QR-SECURITY.md`), and a
+  presentation-smoke spec that captures the 8 screenshots in
+  `artifacts/presentation/` while asserting zero browser console errors
+  across every screen it visits.
 
 ## 12. Known limitations (honest list)
 
@@ -299,9 +375,16 @@ and RLS policies in `infra/db/migrations` are close to what a
   PIN/badge/SSO for staff or phone-OTP for guests. The `LuaApiClient`
   boundary is shaped so swapping the verification step later doesn't
   touch UI code — see `docs/LOCAL-BACKEND.md` §4.
-- **No rate limiting, no production secrets management** — this server
-  has no deployment story beyond localhost/LAN. See
-  `docs/QR-SECURITY.md`.
+- **Rate limiting is in-memory/single-process only** (§9c) and **there's
+  no production secrets management** — this server has no deployment
+  story beyond localhost/LAN. See `docs/QR-SECURITY.md`.
+- **No `/admin/audit-log` read endpoint yet** — every catalog/loyalty
+  write is logged (§9b), but reading that log back is only proven via a
+  direct database query in tests, not through any UI or API route.
+- **Collections have no hero-media upload** — `imageUrl` is a plain
+  text field (see "no image upload pipeline" below), and the seeded
+  Book Collection descriptions are original placeholder copy for this
+  demo, not real Lua Pastry Studio marketing text.
 - **Cross-device camera testing wasn't physically verified against a
   real iPhone** from this environment — Playwright's fake-camera-device
   flags proved the `getUserMedia`/`BarcodeDetector`/`jsQR` code paths
@@ -309,11 +392,17 @@ and RLS policies in `infra/db/migrations` are close to what a
   but a physical phone's Safari camera permission prompt and HTTPS
   requirements weren't exercised. `docs/LOCAL-BACKEND.md` §6 explains
   exactly what will and won't work and why.
-- **Admin menu/rewards/staff management stays read-only** this round —
-  only the Loyalty program screen writes to the real backend
-  (`PATCH /api/admin/loyalty/program`). Adding CRUD for products/rewards/
-  staff is additive (the RLS/grant shape already distinguishes
-  `app_admin`), not a redesign.
+- **Staff management stays read-only.** Categories, products,
+  availability, collections, and rewards now have real CRUD (§9b) and
+  the Loyalty program screen already wrote to the real backend before
+  that; staff account management (`/admin/staff`) is the one Admin
+  screen still read-only this round. Adding it is additive, not a
+  redesign — the RLS/grant shape already distinguishes `app_admin`.
+- **No image upload pipeline.** Product/collection `imageUrl` is a
+  plain text field an admin can point at any URL; there's no storage
+  bucket, upload UI, or validation that the URL is even an image. Guest
+  renders a local neutral placeholder (`ImageSurface`) when it's empty,
+  by design — no scraped or copyrighted photos ship in this repo.
 - **No Realtime.** Screens refetch on navigation rather than subscribing
   to live updates — acceptable per the brief's explicit permission to
   prefer refetch-on-focus over a Realtime setup this round.

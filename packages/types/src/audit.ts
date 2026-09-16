@@ -17,6 +17,19 @@ export const AUDIT_ACTIONS = [
   "staff.role_changed",
   "menu.item.updated",
   "settings.loyalty_program.updated",
+  "catalog.category.created",
+  "catalog.category.updated",
+  "catalog.category.deleted",
+  "catalog.product.created",
+  "catalog.product.updated",
+  "catalog.product.archived",
+  "catalog.availability.updated",
+  "catalog.collection.created",
+  "catalog.collection.updated",
+  "catalog.collection.deleted",
+  "catalog.reward.created",
+  "catalog.reward.updated",
+  "catalog.reward.archived",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

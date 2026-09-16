@@ -13,6 +13,8 @@ import { qrRouter } from "./routes/qrRoutes";
 import { redemptionsRouter } from "./routes/redemptions";
 import { staffRouter } from "./routes/staff";
 import { adminRouter } from "./routes/admin";
+import { adminCatalogRouter } from "./routes/adminCatalog";
+import { adminCollectionsRouter } from "./routes/adminCollections";
 import { locationsRouter } from "./routes/locations";
 
 export function createApp() {
@@ -33,6 +35,8 @@ export function createApp() {
   app.use("/api", redemptionsRouter);
   app.use("/api", staffRouter);
   app.use("/api", adminRouter);
+  app.use("/api", adminCatalogRouter);
+  app.use("/api", adminCollectionsRouter);
   app.use("/api", locationsRouter);
 
   const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

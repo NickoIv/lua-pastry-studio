@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import pg from "pg";
 import { createApp } from "../src/app";
+import { resetRateLimitState } from "../src/rateLimit";
 
 /**
  * Integration tests run against the real local dev Postgres (infra/db) —
@@ -9,12 +10,15 @@ import { createApp } from "../src/app";
  * which truncates every data table and re-seeds without restarting
  * Postgres itself (a full stop/reinit, as `pnpm db:reset` does, would
  * invalidate this file's own open pool connections mid-suite). Every
- * test run starts from the exact seed in docs/LOCAL-BACKEND.md.
+ * test run starts from the exact seed in docs/LOCAL-BACKEND.md. It also
+ * clears the in-memory rate-limit buckets, so one test file's login/QR
+ * volume never bleeds into the next file's counters.
  */
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
 export function resetDatabase() {
   execFileSync("bash", ["infra/db/scripts/wipe.sh"], { cwd: REPO_ROOT, stdio: "pipe" });
+  resetRateLimitState();
 }
 
 /** Superuser pool for direct fixture setup that bypasses RLS/functions — mirrors infra/db/seed.sql, not the API surface under test. */

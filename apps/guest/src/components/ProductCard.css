@@ -2,6 +2,34 @@
   overflow: hidden;
 }
 
+.lua-product-card--unavailable .lua-product-card__name,
+.lua-product-card--unavailable .lua-product-card__price {
+  color: var(--lua-color-text-faint);
+}
+
+.lua-product-card__media {
+  position: relative;
+}
+
+.lua-product-card--unavailable .lua-product-card__media {
+  opacity: 0.55;
+}
+
+.lua-product-card__unavailable-tag {
+  position: absolute;
+  left: var(--lua-space-xs);
+  bottom: var(--lua-space-xs);
+  background: var(--lua-color-overlay);
+  color: var(--lua-color-text-on-accent);
+  font-size: var(--lua-text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--lua-radius-pill);
+  opacity: 1;
+}
+
 .lua-product-card__body {
   padding: var(--lua-space-sm) var(--lua-space-sm) var(--lua-space-md);
   display: flex;

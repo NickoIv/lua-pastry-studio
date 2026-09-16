@@ -5,8 +5,9 @@ export type AsyncState<T> =
   | { status: "success"; data: T; error?: undefined }
   | { status: "error"; data?: undefined; error: Error };
 
-export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncState<T> {
+export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncState<T> & { refresh: () => void } {
   const [state, setState] = useState<AsyncState<T>>({ status: "loading" });
+  const [nonce, setNonce] = useState(0);
   const loaderRef = useRef(loader);
   useEffect(() => {
     loaderRef.current = loader;
@@ -33,7 +34,7 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncSta
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, nonce]);
 
-  return state;
+  return { ...state, refresh: () => setNonce((n) => n + 1) };
 }
