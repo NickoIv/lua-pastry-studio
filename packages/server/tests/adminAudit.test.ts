@@ -90,6 +90,7 @@ describe("Admin audit log", () => {
     const res2 = await request(app)
       .get("/api/admin/audit-log?pageSize=1&page=2")
       .set("Authorization", `Bearer ${adminToken}`);
+    expect(res2.status).toBe(200);
     if (res2.body.items.length > 0) {
       expect(new Date(res.body.items[0].createdAt).getTime()).toBeGreaterThanOrEqual(
         new Date(res2.body.items[0].createdAt).getTime(),

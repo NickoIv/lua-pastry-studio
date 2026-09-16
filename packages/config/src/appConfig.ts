@@ -21,13 +21,23 @@ export function getDataMode(): DataMode {
 }
 
 /**
- * Defaults to localhost, which only works from the same machine running
- * the server. For a phone on the same Wi-Fi to reach it, set
- * VITE_LUA_API_URL to your Mac's LAN IP — see docs/LOCAL-BACKEND.md
- * "Cross-device testing".
+ * `VITE_LUA_API_URL` is an explicit override (a non-default port, a
+ * tunnel, a future deployment) — most local dev setups shouldn't need
+ * to set it at all. Left unset, this derives the API origin from
+ * whatever host the page itself was loaded from: `localhost` on the Mac
+ * stays `localhost`, and a phone that opened Guest via the Mac's LAN IP
+ * (`http://192.168.1.42:5173`) gets `http://192.168.1.42:4000` — the one
+ * address a phone can actually reach — with zero configuration and
+ * without ever hardcoding a specific IP into source code. See
+ * docs/LOCAL-BACKEND.md "Cross-device testing".
  */
 export function getApiBaseUrl(): string {
-  return readEnv("VITE_LUA_API_URL") ?? "http://localhost:4000/api";
+  const explicit = readEnv("VITE_LUA_API_URL");
+  if (explicit) return explicit;
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    return `${window.location.protocol}//${window.location.hostname}:4000/api`;
+  }
+  return "http://localhost:4000/api";
 }
 
 /** Client-side fallback only — the server is the real source of truth for QR TTL (Admin-configurable, see docs/ARCHITECTURE.md §16). */

@@ -34,3 +34,6 @@ packages/server/.env
 # environment, never repository assets. See docs/ARCHITECTURE.md "Media
 # foundation".
 packages/server/uploads
+
+# pnpm demo:* launcher's own PID tracking + logs — see scripts/demo/.
+.runtime

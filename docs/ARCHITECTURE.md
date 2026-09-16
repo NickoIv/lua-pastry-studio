@@ -549,11 +549,50 @@ otherwise provide. If Docker becomes available later, the SQL schema
 and RLS policies in `infra/db/migrations` are close to what a
 `supabase init` project's migrations would contain unchanged.
 
+## 10b. Local demo launcher
+
+`scripts/demo/{doctor,start,stop,reset,open}.mjs` (`pnpm demo:*`) is a
+thin Node orchestrator over §10's existing `infra/db/scripts/*.sh` and
+`pnpm dev:*` — it doesn't reimplement Postgres lifecycle management,
+just chains the already-correct scripts together and adds what they
+don't do on their own: port/health polling before declaring readiness,
+PID tracking in a gitignored `.runtime/` directory (so `demo:stop` only
+ever signals a process this launcher itself started — never an
+unrelated Node/Postgres process on the machine), Mac LAN-IP detection
+for phone testing, and a human-readable status report. `demo:start` is
+idempotent — re-running it while everything's already up just confirms
+health instead of spawning duplicates, detected via the same PID
+tracking. `demo:reset` chains `start → migrate → wipe` (not a full
+`db:reset` reinit, since that would drop connections a running API
+server holds) and asserts Николай's balance is exactly 3,288 afterward
+as a correctness check, not just a "did the script exit 0" check.
+
+**LAN/CORS, made to work without any per-network configuration.**
+Guest/Staff/Admin's `vite.config.ts` all set `server.host: true` (bind
+`0.0.0.0`, not just localhost), and
+`packages/config/src/appConfig.ts#getApiBaseUrl` derives the API origin
+from `window.location.hostname` when `VITE_LUA_API_URL` isn't set
+explicitly — so the exact same build works whether a page was opened
+via `localhost` (the Mac) or the Mac's LAN IP (a phone on the same
+Wi-Fi), with no IP address ever hardcoded anywhere in source. The
+API's own CORS policy (`packages/server/src/corsPolicy.ts`) was
+tightened to match: the previous default was a wide-open `*`, now the
+default is "localhost or an RFC1918 private-LAN address, only on the
+three known Vite dev ports" — a real allow-list pattern, not
+"disabled for convenience." Setting `CORS_ORIGIN` to an explicit
+comma-separated origin list (instead of leaving it at the `*` example
+value) switches to a plain allow-list instead — the shape a future
+non-local deployment would use, kept structurally separate from local-
+dev behavior rather than one wildcard doing double duty for both.
+
+See `docs/TEST-LUA-LOCALLY.md` for the non-developer walkthrough this
+launcher exists to support.
+
 ## 11. Tests
 
 - `packages/domain/tests` (18) + `packages/utils/tests` (8) — pure
   logic, no I/O, unchanged from the previous milestone.
-- `packages/server/tests` (88) — integration tests against the real
+- `packages/server/tests` (97) — integration tests against the real
   local Postgres (`pnpm test:server`): both loyalty scenarios end to
   end over real HTTP, QR expiry/reuse/invalid-token handling, RBAC
   (cross-customer data leakage, role enforcement, unauthenticated
@@ -569,9 +608,14 @@ and RLS policies in `infra/db/migrations` are close to what a
   the API and by calling the DB function directly), customer management
   (list aggregate correctness, detail, name/birthday edits, the
   QR-scan DTO staying minimal), manual point adjustments (ledger-row
-  creation, negative-balance guard, idempotent retry, audit trail), and
+  creation, negative-balance guard, idempotent retry, audit trail),
   media upload (valid formats, oversized/spoofed/path-traversal
-  rejection, RBAC) — see `packages/server/tests/*.test.ts`. Each test
+  rejection, RBAC), the dev-mode CORS policy (localhost/private-LAN
+  origins on the three known dev ports allowed, public/arbitrary origins
+  and unexpected ports rejected — `packages/server/src/corsPolicy.ts`,
+  see "Local demo launcher" below), and the health endpoint (reports a
+  real DB connectivity check, never leaks connection strings/secrets) —
+  see `packages/server/tests/*.test.ts`. Each test
   file truncates and reseeds the database itself
   (`infra/db/scripts/wipe.sh`), so the suite is safe to re-run without a
   manual reset.

@@ -29,6 +29,19 @@ Both modes go through the exact same screens and hooks — see
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how that works and
 [`docs/QR-SECURITY.md`](docs/QR-SECURITY.md) for the QR token model.
 
+## Try it now (one command)
+
+```bash
+pnpm demo:start
+```
+
+Starts the local database, the API, and all three apps, and prints the
+URLs (including a phone-reachable one for Guest). `pnpm demo:stop` shuts
+it all down again, and `pnpm demo:reset` wipes and reseeds the demo
+data. See [`docs/TEST-LUA-LOCALLY.md`](docs/TEST-LUA-LOCALLY.md) for a
+full non-developer walkthrough, or double-click `Start Lua.command` /
+`Stop Lua.command` in Finder.
+
 ## Requirements
 
 - Node.js ≥ 20
@@ -80,7 +93,7 @@ pnpm lint         # eslint .
 pnpm format       # prettier --write .
 pnpm test          # vitest run — packages/domain + packages/utils, no DB needed
 pnpm test:server    # starts/migrates/seeds the DB, then packages/server's
-                     # 78 integration tests against the real Postgres
+                     # 97 integration tests against the real Postgres
 pnpm test:all       # both of the above
 pnpm build         # typecheck everything, then vite build the three apps
 pnpm verify        # typecheck + lint + test:all + build — the full gate
@@ -105,7 +118,7 @@ packages/
   server/        Express API: auth, RLS-aware DB access, atomic loyalty
                   operations, the Admin catalog/staff/customer CMS, a
                   local media upload pipeline, an in-memory rate limiter
-                  — packages/server/tests has 78 integration tests.
+                  — packages/server/tests has 97 integration tests.
   ui/            Design system: tokens, base component set, one icon set.
   i18n/          ru/kk/en dictionaries + a React provider/hook.
   utils/         Money formatting, points pluralization, date formatting.

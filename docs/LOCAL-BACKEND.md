@@ -6,6 +6,28 @@ the in-memory mock. Everything here is **local-only** — there is no
 production deployment story. See [`docs/ARCHITECTURE.md`](ARCHITECTURE.md)
 for why this exists and what it does and doesn't guarantee.
 
+## 0. Quick start — one command
+
+```bash
+pnpm demo:doctor   # optional preflight check, changes nothing
+pnpm demo:start    # starts Postgres + API + Guest + Staff + Admin
+pnpm demo:stop     # stops everything it started
+pnpm demo:reset    # wipes and reseeds demo data (Николай back to 3,288 pts)
+```
+
+`scripts/demo/*.mjs` implements this — it's a thin orchestrator over the
+exact same `infra/db/scripts/*.sh` and `pnpm dev:*` commands described
+step-by-step below, plus port/health checks, PID tracking (so
+`demo:stop` never touches a process it didn't start), and Mac LAN-IP
+detection for phone testing. `Start Lua.command`/`Stop Lua.command` at
+the repo root do the same thing for double-clicking from Finder. A
+non-developer walkthrough (no terminal knowledge assumed beyond typing
+one command) lives in
+[`docs/TEST-LUA-LOCALLY.md`](TEST-LUA-LOCALLY.md). Everything from here
+down is the manual, step-by-step version of the same thing — useful for
+understanding what's actually happening, or if you want to run one
+piece on its own.
+
 ## Why not Supabase CLI
 
 The preferred direction for a "local Supabase" stack is `supabase start`,
@@ -160,23 +182,35 @@ certificate or a disabled-security browser flag; the honest options are:
    physical device. Not set up in this repo — treat it as a follow-up if
    you need it.
 
-To reach the Mac from a phone on the same Wi-Fi:
+To reach the Mac from a phone on the same Wi-Fi, `pnpm demo:start` (§0)
+already does everything needed and prints the exact phone URL. Doing it
+by hand, or understanding what's happening under the hood:
 
 ```bash
 # Find your Mac's LAN IP
 ipconfig getifaddr en0   # or en1, depending on your network interface
 
-# Start the frontends bound to 0.0.0.0 (Vite's default `--host` already
-# used by these dev scripts is localhost-only; pass --host to expose it)
-pnpm --filter @lua/guest exec vite --host --port 5173
-
-# Point the app at the API server via your Mac's IP, not localhost
-VITE_LUA_API_URL=http://192.168.1.23:4000/api VITE_LUA_DATA_MODE=server \
-  pnpm --filter @lua/guest exec vite --host --port 5173
+# Each app's vite.config.ts sets `host: true`, so `pnpm dev:guest` (etc.)
+# already binds 0.0.0.0, not just localhost — no --host flag needed.
+pnpm dev:guest
 ```
 
+Then open `http://<that-IP>:5173` on the phone. **No `VITE_LUA_API_URL`
+override is needed** — `packages/config/src/appConfig.ts#getApiBaseUrl`
+derives the API origin from whatever host the page was actually opened
+from (`localhost` stays `localhost`; the Mac's LAN IP becomes that same
+IP on port 4000), so the same build/config works for both a
+Mac-only session and a phone session without touching env vars. Set
+`VITE_LUA_API_URL` explicitly only to override this (a non-default API
+port, a tunnel, etc).
+
 `packages/server` already binds `0.0.0.0` by default (`HOST` in
-`packages/server/.env.example`), so the API side needs no changes.
+`packages/server/.env.example`), so the API side needs no changes. Its
+CORS policy (`packages/server/src/corsPolicy.ts`) only allows requests
+from `localhost`/a private-LAN address on the three known dev ports
+(5173/5174/5175) — not a wide-open `*` — so this works without opening
+the API up to arbitrary websites; see that file's tests
+(`packages/server/tests/corsPolicy.test.ts`) for the exact rules.
 
 ## 7. Dev-only manual QR entry
 
@@ -192,7 +226,7 @@ resolve/confirm code path a real camera scan would.
 ```bash
 pnpm test           # packages/domain + packages/utils — no DB needed
 pnpm test:server     # starts/migrates/seeds the DB, then packages/server's
-                      # integration tests (78 tests against the real Postgres)
+                      # integration tests (97 tests against the real Postgres)
 pnpm test:all        # both of the above
 pnpm verify          # typecheck + lint + test:all + build — the full gate
 ```
