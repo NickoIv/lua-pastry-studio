@@ -4,6 +4,7 @@ import { ApiRequestError, type ProductInput, type ServerCategory } from "@lua/da
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
+import { ImageUploadField } from "./ImageUploadField";
 
 export interface ProductFormValue {
   id?: string;
@@ -55,6 +56,7 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
   const [value, setValue] = useState<ProductFormValue>(initial ?? fallback);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [imageAltText, setImageAltText] = useState("");
   // Re-seeds when editing a different row, and also when the categories
   // list (loaded async) finally arrives after this modal already
   // mounted with an empty default categoryId — otherwise "new product"
@@ -186,14 +188,13 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
           onChange={(e) => setValue((v) => ({ ...v, allergens: e.target.value }))}
         />
       </FormField>
-      <FormField label="Изображение (URL)" htmlFor="prod-image" hint="Локальный/нейтральный плейсхолдер — не использовать чужие фото">
-        <input
-          id="prod-image"
-          type="url"
-          value={value.imageUrl}
-          onChange={(e) => setValue((v) => ({ ...v, imageUrl: e.target.value }))}
-        />
-      </FormField>
+      <ImageUploadField
+        kind="product"
+        imageUrl={value.imageUrl}
+        altText={imageAltText}
+        onImageUrlChange={(url) => setValue((v) => ({ ...v, imageUrl: url }))}
+        onAltTextChange={setImageAltText}
+      />
       <div className="lua-form-row">
         <label className="lua-form-checkbox">
           <input

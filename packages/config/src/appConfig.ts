@@ -43,3 +43,24 @@ export const APP_CONFIG = {
   qrTokenTtlSeconds: getQrTokenTtlSeconds(),
   rewardRedemptionTtlSeconds: getQrTokenTtlSeconds(),
 } as const;
+
+/**
+ * `packages/server`'s media routes (packages/server/src/routes/media.ts)
+ * return a server-relative URL like `/media/product/<id>.webp` — it has
+ * no reliable way to know its own externally-reachable origin (that
+ * changes for LAN/phone testing, see docs/LOCAL-BACKEND.md "Cross-device
+ * testing"). Resolving it against the *client's* configured API origin
+ * here means a relative media URL always loads from wherever this app
+ * is actually pointed at, not wherever it happens to be running from.
+ * An already-absolute URL (an admin-pasted external image) passes through unchanged.
+ */
+export function resolveMediaUrl(url: string | undefined): string | undefined {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (APP_CONFIG.dataMode !== "server") return url;
+  try {
+    return new URL(url, APP_CONFIG.apiBaseUrl).toString();
+  } catch {
+    return url;
+  }
+}

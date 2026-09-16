@@ -9,6 +9,14 @@ import { apiClient } from "./apiClient";
 
 const isServerMode = APP_CONFIG.dataMode === "server";
 
+export function useLocations() {
+  const backend = useBackend();
+  return useAsync(async () => {
+    if (isServerMode) return apiClient.listLocations();
+    return backend.store.locations;
+  }, [backend]);
+}
+
 export interface OpenOrderView {
   id: string;
   items: Array<{ productName: string; quantity: number }>;

@@ -28,6 +28,9 @@ export const API_ERROR_CODES = [
   "PRODUCT_NOT_FOUND",
   "COLLECTION_NOT_FOUND",
   "RATE_LIMITED",
+  "STAFF_NOT_FOUND",
+  "OWNER_PROTECTED",
+  "CUSTOMER_NOT_FOUND",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -62,6 +65,9 @@ export const API_ERROR_MESSAGES_RU: Record<ApiErrorCode, string> = {
   PRODUCT_NOT_FOUND: "Товар не найден.",
   COLLECTION_NOT_FOUND: "Коллекция не найдена.",
   RATE_LIMITED: "Слишком много попыток. Подождите немного и повторите.",
+  STAFF_NOT_FOUND: "Сотрудник не найден.",
+  OWNER_PROTECTED: "Учётную запись владельца нельзя изменить через этот экран.",
+  CUSTOMER_NOT_FOUND: "Клиент не найден.",
 };
 
 export function isApiErrorCode(value: string): value is ApiErrorCode {

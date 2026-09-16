@@ -268,6 +268,7 @@ export function mapCustomer(row: CustomerRow) {
 
 export interface StaffRow {
   id: string;
+  email: string;
   display_name: string;
   role: string;
   location_id: string;
@@ -278,6 +279,7 @@ export interface StaffRow {
 export function mapStaff(row: StaffRow) {
   return {
     id: row.id,
+    email: row.email,
     displayName: row.display_name,
     role: row.role,
     locationId: row.location_id,

@@ -1,6 +1,12 @@
 import { ApiClient, type ApiClientOptions } from "./ApiClient";
 import type {
+  AdjustPointsResult,
   AdminDashboard,
+  AuditLogEntry,
+  CustomerDetail,
+  CustomerListItem,
+  MediaAsset,
+  Paginated,
   ProductAvailabilityRow,
   ServerCategory,
   ServerCollection,
@@ -50,6 +56,7 @@ export interface CollectionInput {
   productIds?: string[];
   startsAt?: string | null;
   endsAt?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface RewardInput {
@@ -61,6 +68,43 @@ export interface RewardInput {
   perCustomerLimit?: number | null;
   perCustomerLimitWindowDays?: number | null;
   stock?: number | null;
+}
+
+export interface StaffCreateInput {
+  email: string;
+  password: string;
+  displayName: string;
+  role: string;
+  locationId: string;
+}
+
+export interface StaffUpdateInput {
+  displayName?: string;
+  role?: string;
+  active?: boolean;
+  locationId?: string;
+}
+
+export interface CustomerUpdateInput {
+  firstName?: string;
+  lastName?: string | null;
+  birthDate?: string | null;
+}
+
+export interface AdjustPointsInput {
+  points: number;
+  reason: string;
+  idempotencyKey?: string;
+}
+
+export interface AuditLogQuery {
+  action?: string;
+  actorStaffId?: string;
+  targetType?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface CustomerSession {
@@ -184,9 +228,6 @@ export class LuaApiClient {
   getAdminDashboard() {
     return this.http.get<AdminDashboard>("/admin/dashboard");
   }
-  listAdminCustomers() {
-    return this.http.get<ServerCustomer[]>("/admin/customers");
-  }
   listAdminOrders() {
     return this.http.get<ServerOrder[]>("/admin/orders");
   }
@@ -261,5 +302,58 @@ export class LuaApiClient {
   }
   updateReward(id: string, patch: Partial<RewardInput>) {
     return this.http.patch<ServerReward>(`/admin/rewards/${id}`, patch);
+  }
+
+  // ---- Admin: staff management --------------------------------------
+  createStaff(input: StaffCreateInput) {
+    return this.http.post<ServerStaff>("/admin/staff", input);
+  }
+  updateStaff(id: string, patch: StaffUpdateInput) {
+    return this.http.patch<ServerStaff>(`/admin/staff/${id}`, patch);
+  }
+
+  // ---- Admin: customer management -------------------------------------
+  listAdminCustomers(params?: { q?: string; page?: number; pageSize?: number }) {
+    const query = new URLSearchParams();
+    if (params?.q) query.set("q", params.q);
+    if (params?.page) query.set("page", String(params.page));
+    if (params?.pageSize) query.set("pageSize", String(params.pageSize));
+    const qs = query.toString();
+    return this.http.get<Paginated<CustomerListItem>>(`/admin/customers${qs ? `?${qs}` : ""}`);
+  }
+  getCustomerDetail(id: string) {
+    return this.http.get<CustomerDetail>(`/admin/customers/${id}`);
+  }
+  updateCustomer(id: string, patch: CustomerUpdateInput) {
+    return this.http.patch<ServerCustomer>(`/admin/customers/${id}`, patch);
+  }
+  adjustCustomerPoints(id: string, input: AdjustPointsInput) {
+    return this.http.post<AdjustPointsResult>(`/admin/customers/${id}/adjust-points`, input);
+  }
+
+  // ---- Admin: audit log -------------------------------------------------
+  listAuditLog(query?: AuditLogQuery) {
+    const params = new URLSearchParams();
+    if (query?.action) params.set("action", query.action);
+    if (query?.actorStaffId) params.set("actorStaffId", query.actorStaffId);
+    if (query?.targetType) params.set("targetType", query.targetType);
+    if (query?.from) params.set("from", query.from);
+    if (query?.to) params.set("to", query.to);
+    if (query?.page) params.set("page", String(query.page));
+    if (query?.pageSize) params.set("pageSize", String(query.pageSize));
+    const qs = params.toString();
+    return this.http.get<Paginated<AuditLogEntry>>(`/admin/audit-log${qs ? `?${qs}` : ""}`);
+  }
+
+  // ---- Admin: media upload -----------------------------------------------
+  uploadMedia(file: File, kind: "product" | "collection", altText?: string) {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", kind);
+    if (altText) form.append("altText", altText);
+    return this.http.postForm<MediaAsset>("/admin/media", form);
+  }
+  deleteMedia(id: string) {
+    return this.http.delete(`/admin/media/${id}`);
   }
 }

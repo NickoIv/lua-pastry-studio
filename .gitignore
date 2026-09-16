@@ -15,6 +15,12 @@ coverage
 *.tsbuildinfo
 .vite
 
+# Playwright's own run artifacts (screenshots/traces on failure) —
+# artifacts/presentation is the deliberate, committed deliverable.
+test-results
+playwright-report
+blob-report
+
 # Local dev Postgres cluster — never committed, always recreated via
 # `pnpm db:reset`.
 infra/db/pgdata
@@ -23,3 +29,8 @@ infra/db/sockets
 
 # Server-only secrets — never committed, see packages/server/.env.example.
 packages/server/.env
+
+# Runtime image uploads (Admin's local media upload) — regenerated per
+# environment, never repository assets. See docs/ARCHITECTURE.md "Media
+# foundation".
+packages/server/uploads

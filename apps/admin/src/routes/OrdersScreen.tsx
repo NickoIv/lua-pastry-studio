@@ -32,11 +32,14 @@ interface OrderRow {
 
 export function OrdersScreen() {
   const orders = useAdminOrders();
-  const customers = useAdminCustomers();
+  // pageSize maxes out at 100 server-side — plenty for this demo's
+  // customer count; a real deployment would look customers up on
+  // demand instead of loading "all" for a lookup map.
+  const customers = useAdminCustomers({ pageSize: 100 });
 
   const customerName = (id?: string) =>
     (customers.status === "success" &&
-      customers.data.find((c) => c.id === id)?.firstName) ||
+      customers.data.items.find((c) => c.id === id)?.firstName) ||
     "—";
 
   const columns: DataTableColumn<OrderRow>[] = [

@@ -1,8 +1,18 @@
 import { useCallback } from "react";
-import { sumMoney, type Money } from "@lua/types";
+import { asId, sumMoney, type Money } from "@lua/types";
 import { APP_CONFIG } from "@lua/config";
 import { balanceFromLedger } from "@lua/domain";
-import type { CategoryInput, CollectionInput, ProductInput, RewardInput } from "@lua/data-server";
+import type {
+  AdjustPointsInput,
+  AuditLogQuery,
+  CategoryInput,
+  CollectionInput,
+  CustomerUpdateInput,
+  ProductInput,
+  RewardInput,
+  StaffCreateInput,
+  StaffUpdateInput,
+} from "@lua/data-server";
 import { useBackend } from "../backend/useBackend";
 import { apiClient } from "./apiClient";
 import { useAsync } from "./useAsync";
@@ -28,6 +38,8 @@ export interface DashboardView {
   activeMembers: number;
   pointsIssued30d: number;
   pointsRedeemed30d: number;
+  ordersToday: number;
+  activeRewards: number;
 }
 
 export function useDashboard() {
@@ -39,6 +51,7 @@ export function useDashboard() {
     const recentTx = backend.store.loyaltyTransactions.filter(
       (t) => new Date(t.createdAt).getTime() > cutoff,
     );
+    const today = new Date().toISOString().slice(0, 10);
     return {
       revenue: sumMoney(orders.map((o) => o.total)),
       ordersCompleted: orders.length,
@@ -49,6 +62,8 @@ export function useDashboard() {
       pointsRedeemed30d: recentTx
         .filter((t) => t.points < 0)
         .reduce((s, t) => s - t.points, 0),
+      ordersToday: backend.store.orders.filter((o) => o.createdAt.slice(0, 10) === today).length,
+      activeRewards: backend.store.rewards.filter((r) => r.isActive).length,
     };
   }, [backend]);
 }
@@ -179,17 +194,71 @@ export function useDeleteCollection() {
   }, []);
 }
 
-export function useAdminCustomers() {
+export function useAdminCustomers(params: { q?: string; page?: number; pageSize?: number } = {}) {
+  const backend = useBackend();
+  const { q = "", page = 1, pageSize = 20 } = params;
+  return useAsync(async () => {
+    if (isServerMode) return apiClient.listAdminCustomers({ q, page, pageSize });
+
+    const needle = q.trim().toLowerCase();
+    const all = backend.store.customers
+      .map((c) => {
+        const orders = backend.store.orders.filter(
+          (o) => o.customerId === c.id && o.status === "COMPLETED",
+        );
+        return {
+          ...c,
+          pointsBalance: balanceFromLedger(
+            backend.store.loyaltyTransactions.filter((t) => t.customerId === c.id),
+          ),
+          ordersCount: orders.length,
+          lifetimeSpend: sumMoney(orders.map((o) => o.total)),
+          lastOrderAt: orders.length
+            ? orders.map((o) => o.createdAt).sort().at(-1)
+            : undefined,
+        };
+      })
+      .filter(
+        (c) =>
+          !needle ||
+          `${c.firstName} ${c.lastName ?? ""}`.toLowerCase().includes(needle) ||
+          c.phone.includes(needle),
+      );
+    const start = (page - 1) * pageSize;
+    return { items: all.slice(start, start + pageSize), total: all.length, page, pageSize };
+  }, [backend, q, page, pageSize]);
+}
+
+export function useCustomerDetail(customerId: string | null) {
   const backend = useBackend();
   return useAsync(async () => {
-    if (isServerMode) return apiClient.listAdminCustomers();
-    return backend.store.customers.map((c) => ({
-      ...c,
-      pointsBalance: balanceFromLedger(
-        backend.store.loyaltyTransactions.filter((t) => t.customerId === c.id),
-      ),
-    }));
-  }, [backend]);
+    if (!customerId) return null;
+    if (isServerMode) return apiClient.getCustomerDetail(customerId);
+    const profile = await backend.customers.getById(asId(customerId));
+    if (!profile) return null;
+    const ledger = backend.store.loyaltyTransactions.filter((t) => t.customerId === customerId);
+    return {
+      profile,
+      pointsBalance: balanceFromLedger(ledger),
+      ledger,
+      orders: backend.store.orders.filter((o) => o.customerId === customerId),
+      redemptions: backend.store.rewardRedemptions.filter((r) => r.customerId === customerId),
+    };
+  }, [backend, customerId]);
+}
+
+export function useUpdateCustomer() {
+  return useCallback((id: string, patch: CustomerUpdateInput) => {
+    requireServerMode();
+    return apiClient.updateCustomer(id, patch);
+  }, []);
+}
+
+export function useAdjustCustomerPoints() {
+  return useCallback((id: string, input: AdjustPointsInput) => {
+    requireServerMode();
+    return apiClient.adjustCustomerPoints(id, input);
+  }, []);
 }
 
 export function useAdminStaff() {
@@ -198,6 +267,42 @@ export function useAdminStaff() {
     if (isServerMode) return apiClient.listAdminStaff();
     return backend.store.staffUsers;
   }, [backend]);
+}
+
+export function useCreateStaff() {
+  return useCallback((input: StaffCreateInput) => {
+    requireServerMode();
+    return apiClient.createStaff(input);
+  }, []);
+}
+
+export function useUpdateStaff() {
+  return useCallback((id: string, patch: StaffUpdateInput) => {
+    requireServerMode();
+    return apiClient.updateStaff(id, patch);
+  }, []);
+}
+
+export function useAuditLog(query: AuditLogQuery = {}) {
+  return useAsync(async () => {
+    if (!isServerMode) return { items: [], total: 0, page: 1, pageSize: 25 };
+    return apiClient.listAuditLog(query);
+  }, [
+    query.action,
+    query.actorStaffId,
+    query.targetType,
+    query.from,
+    query.to,
+    query.page,
+    query.pageSize,
+  ]);
+}
+
+export function useUploadMedia() {
+  return useCallback((file: File, kind: "product" | "collection", altText?: string) => {
+    requireServerMode();
+    return apiClient.uploadMedia(file, kind, altText);
+  }, []);
 }
 
 export function useLocations() {

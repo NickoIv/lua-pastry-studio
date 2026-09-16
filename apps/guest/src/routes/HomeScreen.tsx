@@ -8,6 +8,7 @@ import {
   StarIcon,
 } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
+import { resolveMediaUrl } from "@lua/config";
 import { useMenu } from "../data/hooks";
 import { LoyaltyBalanceCard } from "../components/LoyaltyBalanceCard";
 import { ProductCard } from "../components/ProductCard";
@@ -69,7 +70,7 @@ export function HomeScreen() {
         <div className="lua-home__collections">
           {featuredCollections.map((collection) => (
             <Card key={collection.id} padding="none" className="lua-home__collection">
-              <ImageSurface aspectRatio="16 / 9" label={collection.name[locale]} />
+              <ImageSurface aspectRatio="16 / 9" label={collection.name[locale]} src={resolveMediaUrl(collection.imageUrl)} />
               <div className="lua-home__collection-body">
                 <p className="lua-home__collection-name">{collection.name[locale]}</p>
                 {collection.description ? (

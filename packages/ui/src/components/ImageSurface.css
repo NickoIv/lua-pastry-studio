@@ -9,6 +9,13 @@
   overflow: hidden;
 }
 
+.lua-image-surface__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .lua-image-surface__mark {
   font-family: var(--lua-font-serif);
   font-size: var(--lua-text-sm);

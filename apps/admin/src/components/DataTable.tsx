@@ -11,9 +11,11 @@ export interface DataTableColumn<T> {
 export function DataTable<T extends { id: string }>({
   columns,
   rows,
+  onRowClick,
 }: {
   columns: DataTableColumn<T>[];
   rows: T[];
+  onRowClick?: (row: T) => void;
 }) {
   return (
     <div className="lua-data-table__scroll">
@@ -32,7 +34,11 @@ export function DataTable<T extends { id: string }>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id}>
+            <tr
+              key={row.id}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              className={onRowClick ? "lua-data-table__row--clickable" : undefined}
+            >
               {columns.map((col) => (
                 <td
                   key={col.key}

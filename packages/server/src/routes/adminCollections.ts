@@ -47,6 +47,7 @@ interface CollectionBody {
   productIds?: unknown;
   startsAt?: unknown;
   endsAt?: unknown;
+  imageUrl?: unknown;
 }
 
 async function setCollectionProducts(client: pg.PoolClient, collectionId: string, productIds: unknown) {
@@ -71,8 +72,8 @@ adminCollectionsRouter.post(
 
     const row = await withRole("app_admin", { staffId }, async (client) => {
       const result = await client.query<CollectionRow & { active: boolean }>(
-        `insert into collections (name, subtitle, description, active, featured, sort_order, starts_at, ends_at)
-         values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`,
+        `insert into collections (name, subtitle, description, active, featured, sort_order, starts_at, ends_at, image_url)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *`,
         [
           JSON.stringify(name),
           body.subtitle !== undefined ? JSON.stringify(readOptionalLocalizedText(body.subtitle)) : null,
@@ -82,6 +83,7 @@ adminCollectionsRouter.post(
           readOptionalPositiveInt(body.sortOrder) ?? 0,
           typeof body.startsAt === "string" ? body.startsAt : null,
           typeof body.endsAt === "string" ? body.endsAt : null,
+          typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null,
         ],
       );
       const created = result.rows[0]!;
@@ -128,8 +130,9 @@ adminCollectionsRouter.patch(
            sort_order = coalesce($8, sort_order),
            starts_at = case when $9 then $10 else starts_at end,
            ends_at = case when $11 then $12 else ends_at end,
+           image_url = case when $13 then $14 else image_url end,
            updated_at = now()
-         where id = $13`,
+         where id = $15`,
         [
           name ? JSON.stringify(name) : null,
           body.subtitle !== undefined,
@@ -143,6 +146,8 @@ adminCollectionsRouter.patch(
           typeof body.startsAt === "string" ? body.startsAt : null,
           body.endsAt !== undefined,
           typeof body.endsAt === "string" ? body.endsAt : null,
+          body.imageUrl !== undefined,
+          typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null,
           req.params.id,
         ],
       );

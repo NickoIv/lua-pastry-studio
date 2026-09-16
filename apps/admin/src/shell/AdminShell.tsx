@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
+  ClockIcon,
   ClubIcon,
   DashboardIcon,
   GiftIcon,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { to: "/customers", label: "Клиенты", icon: UsersIcon },
   { to: "/orders", label: "Заказы", icon: OrdersIcon },
   { to: "/staff", label: "Сотрудники", icon: UsersIcon },
+  { to: "/audit", label: "Журнал", icon: ClockIcon },
   { to: "/settings", label: "Настройки", icon: SettingsIcon },
 ] as const;
 

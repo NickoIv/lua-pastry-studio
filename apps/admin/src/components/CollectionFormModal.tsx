@@ -4,6 +4,7 @@ import { ApiRequestError, type CollectionInput, type ServerProduct } from "@lua/
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
+import { ImageUploadField } from "./ImageUploadField";
 
 export interface CollectionFormValue {
   id?: string;
@@ -15,6 +16,7 @@ export interface CollectionFormValue {
   active: boolean;
   featured: boolean;
   productIds: string[];
+  imageUrl: string;
 }
 
 export interface CollectionFormModalProps {
@@ -34,12 +36,14 @@ const EMPTY: CollectionFormValue = {
   active: true,
   featured: false,
   productIds: [],
+  imageUrl: "",
 };
 
 export function CollectionFormModal({ open, onClose, initial, products, onSubmit }: CollectionFormModalProps) {
   const [value, setValue] = useState<CollectionFormValue>(initial ?? EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [imageAltText, setImageAltText] = useState("");
 
   if (open && initial?.id !== value.id) {
     setValue(initial ?? EMPTY);
@@ -69,6 +73,7 @@ export function CollectionFormModal({ open, onClose, initial, products, onSubmit
         active: value.active,
         featured: value.featured,
         productIds: value.productIds,
+        imageUrl: value.imageUrl || null,
       });
       onClose();
     } catch (err) {
@@ -128,6 +133,13 @@ export function CollectionFormModal({ open, onClose, initial, products, onSubmit
           onChange={(e) => setValue((v) => ({ ...v, subtitleRu: e.target.value }))}
         />
       </FormField>
+      <ImageUploadField
+        kind="collection"
+        imageUrl={value.imageUrl}
+        altText={imageAltText}
+        onImageUrlChange={(url) => setValue((v) => ({ ...v, imageUrl: url }))}
+        onAltTextChange={setImageAltText}
+      />
       <FormField label="Товары в коллекции" htmlFor="col-products">
         <div
           id="col-products"

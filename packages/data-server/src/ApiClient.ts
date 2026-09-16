@@ -69,6 +69,40 @@ export class ApiClient {
     return (await response.json()) as T;
   }
 
+  /**
+   * Multipart upload — deliberately doesn't go through `request()`,
+   * which always sets `Content-Type: application/json`. FormData needs
+   * the browser to set its own `multipart/form-data; boundary=...`
+   * header, which only happens if Content-Type is left unset here.
+   */
+  async postForm<T>(path: string, form: FormData): Promise<T> {
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        method: "POST",
+        headers: this.token ? { Authorization: `Bearer ${this.token}` } : {},
+        body: form,
+      });
+    } catch {
+      throw new ApiRequestError("INTERNAL", "Не удалось связаться с сервером Lua.");
+    }
+
+    if (response.status === 401) {
+      this.token = null;
+      this.onTokenChange?.(null);
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      const code = payload?.error?.code;
+      if (typeof code === "string" && isApiErrorCode(code)) {
+        throw new ApiRequestError(code, payload.error.message ?? code);
+      }
+      throw new ApiRequestError("INTERNAL", "Что-то пошло не так.");
+    }
+    return (await response.json()) as T;
+  }
+
   get<T>(path: string): Promise<T> {
     return this.request<T>("GET", path);
   }

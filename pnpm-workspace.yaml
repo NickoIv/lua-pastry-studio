@@ -41,6 +41,8 @@ catalog:
   "@types/supertest": ^7.2.1
   "@types/node": ^26.5.1
   "@playwright/test": ^1.63.0
+  multer: ^2.4.0
+  "@types/multer": ^2.2.0
 
 minimumReleaseAgeExclude:
   - "@vitest/mocker@5.0.1"

@@ -8,6 +8,8 @@ import { RewardsScreen } from "./routes/RewardsScreen";
 import { CollectionsScreen } from "./routes/CollectionsScreen";
 import { LoyaltyScreen } from "./routes/LoyaltyScreen";
 import { CustomersScreen } from "./routes/CustomersScreen";
+import { CustomerDetailScreen } from "./routes/CustomerDetailScreen";
+import { AuditScreen } from "./routes/AuditScreen";
 import { OrdersScreen } from "./routes/OrdersScreen";
 import { StaffScreen } from "./routes/StaffScreen";
 import { SettingsScreen } from "./routes/SettingsScreen";
@@ -25,8 +27,10 @@ export function App() {
           <Route path="/collections" element={<CollectionsScreen />} />
           <Route path="/loyalty" element={<LoyaltyScreen />} />
           <Route path="/customers" element={<CustomersScreen />} />
+          <Route path="/customers/:id" element={<CustomerDetailScreen />} />
           <Route path="/orders" element={<OrdersScreen />} />
           <Route path="/staff" element={<StaffScreen />} />
+          <Route path="/audit" element={<AuditScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="*" element={<NotFoundScreen />} />
         </Route>

@@ -20,6 +20,7 @@ interface CollectionRow {
   active?: boolean;
   featured: boolean;
   sortOrder?: number;
+  imageUrl?: string;
 }
 
 export function CollectionsScreen() {
@@ -67,6 +68,7 @@ export function CollectionsScreen() {
                   active: c.active ?? true,
                   featured: c.featured,
                   productIds: c.productIds,
+                  imageUrl: c.imageUrl ?? "",
                 },
               })
             }

@@ -20,6 +20,8 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET ?? "lua-local-dev-secret-do-not-use-in-production",
   qrTokenTtlSeconds: Number(process.env.QR_TOKEN_TTL_SECONDS ?? 90),
   corsOrigin: process.env.CORS_ORIGIN ?? "*",
+  /** Absolute or relative-to-cwd path; defaults to packages/server/uploads (gitignored) — see docs/ARCHITECTURE.md "Media foundation". */
+  mediaUploadDir: process.env.MEDIA_UPLOAD_DIR ?? null,
 };
 
 if (env.jwtSecret === "lua-local-dev-secret-do-not-use-in-production") {

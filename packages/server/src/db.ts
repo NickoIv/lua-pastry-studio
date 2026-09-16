@@ -2,6 +2,17 @@ import pg from "pg";
 import { env } from "./env";
 import { AppError, mapPostgresError } from "./errors";
 
+// node-postgres's default `date` (OID 1082) parser returns a JS `Date`
+// at local midnight, which then serializes through JSON.stringify as a
+// full UTC ISO timestamp — shifting the calendar day by one for any
+// timezone east of UTC (this server runs in Asia/Almaty, UTC+5). A
+// `date` column has no time-of-day or timezone to begin with, so the
+// only correct fix is to never construct a Date from it at all: keep it
+// as the plain "YYYY-MM-DD" string Postgres already sends over the
+// wire. See docs/ARCHITECTURE.md "Timezones" — this is the bug that
+// section explicitly warns not to reintroduce.
+pg.types.setTypeParser(1082, (value: string) => value);
+
 export const pool = new pg.Pool({ connectionString: env.databaseUrl });
 pool.on("error", (err) => {
   // An idle pooled client dying (e.g. the dev Postgres restarting) must

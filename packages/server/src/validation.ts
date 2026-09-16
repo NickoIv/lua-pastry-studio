@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { ROLES, type Role } from "@lua/types";
 import { AppError } from "./errors";
 
 /** All admin catalog forms require at least a Russian name — kk/en fall back to it if omitted, never left blank in the DB. */
@@ -96,4 +97,54 @@ export function readStringArray(value: unknown): string[] {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) throw new AppError("VALIDATION", 422);
   return value.filter((v): v is string => typeof v === "string");
+}
+
+/** OWNER is deliberately excluded — see 015_staff_management.sql; the DB functions re-check this too. */
+const ADMIN_ASSIGNABLE_ROLES: readonly string[] = ROLES.filter((r) => r !== "OWNER");
+
+export function readAssignableStaffRole(value: unknown): Role {
+  if (typeof value !== "string" || !ADMIN_ASSIGNABLE_ROLES.includes(value)) {
+    throw new AppError("VALIDATION", 422);
+  }
+  return value as Role;
+}
+
+export function readPassword(value: unknown): string {
+  if (typeof value !== "string" || value.length < 8) {
+    throw new AppError("VALIDATION", 422);
+  }
+  return value;
+}
+
+/**
+ * A plain `YYYY-MM-DD` string, passed straight through to Postgres's
+ * `date` column untouched — never routed through `new Date(...)`, which
+ * would interpret it in the server process's local timezone and can
+ * shift the calendar day by one. See docs/ARCHITECTURE.md "Timezones".
+ */
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function readOptionalDateOnly(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string" || !DATE_ONLY_RE.test(value)) {
+    throw new AppError("VALIDATION", 422);
+  }
+  const [year, month, day] = value.split("-").map(Number);
+  // Reject e.g. "2026-02-30" instead of letting Postgres silently roll
+  // it into March — Date.UTC normalizes out-of-range fields instead of
+  // erroring, so compare the parts back out.
+  const asUtc = new Date(Date.UTC(year!, month! - 1, day!));
+  if (
+    asUtc.getUTCFullYear() !== year ||
+    asUtc.getUTCMonth() !== month! - 1 ||
+    asUtc.getUTCDate() !== day
+  ) {
+    throw new AppError("VALIDATION", 422);
+  }
+  return value;
+}
+
+export function readIdempotencyKey(value: unknown, fallbackPrefix: string): string {
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  return `${fallbackPrefix}:${randomBytes(12).toString("hex")}`;
 }

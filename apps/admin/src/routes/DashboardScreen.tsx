@@ -65,6 +65,7 @@ export function DashboardScreen() {
             label="Завершённых заказов"
             value={String(dashboard.data.ordersCompleted)}
           />
+          <StatCard label="Заказов сегодня" value={String(dashboard.data.ordersToday)} />
           <StatCard
             label="Участников Lua Club"
             value={String(dashboard.data.activeMembers)}
@@ -77,6 +78,7 @@ export function DashboardScreen() {
             label="Списано баллов (30 дн.)"
             value={dashboard.data.pointsRedeemed30d.toLocaleString("ru-RU")}
           />
+          <StatCard label="Активных наград" value={String(dashboard.data.activeRewards)} />
         </div>
       ) : (
         <p>Не удалось загрузить дашборд.</p>

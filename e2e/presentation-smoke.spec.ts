@@ -7,6 +7,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS_DIR = path.join(dirname, "..", "artifacts", "presentation");
 const MOBILE_VIEWPORT = { width: 390, height: 844 };
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 };
+const NIKOLAY_ID = "60000000-0000-0000-0000-000000000001";
 
 /**
  * Not a functional test — this is the deliverable itself. Each screen
@@ -60,6 +61,16 @@ test.describe("presentation screenshots", () => {
     await shoot(adminPage, "08-admin-dashboard.png", () =>
       adminPage.getByText("Выручка (завершённые заказы)"),
     );
+
+    await adminPage.goto(`${ADMIN_URL}/customers/${NIKOLAY_ID}`);
+    await shoot(adminPage, "09-customer-detail.png", () => adminPage.getByRole("heading", { name: "Лояльность" }));
+
+    await adminPage.goto(`${ADMIN_URL}/audit`);
+    await shoot(adminPage, "10-admin-audit.png", () => adminPage.getByText("Журнал действий"));
+
+    await adminPage.goto(`${ADMIN_URL}/menu`);
+    await adminPage.locator("tr", { hasText: "Эспрессо" }).getByRole("button", { name: "Изменить" }).click();
+    await shoot(adminPage, "11-product-editor.png", () => adminPage.getByText("Редактировать товар"));
 
     await adminContext.close();
 

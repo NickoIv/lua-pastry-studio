@@ -33,6 +33,14 @@
   border-bottom: none;
 }
 
+.lua-data-table__row--clickable {
+  cursor: pointer;
+}
+
+.lua-data-table__row--clickable:hover {
+  background: var(--lua-color-surface-alt);
+}
+
 .lua-data-table__cell--right {
   text-align: right;
 }

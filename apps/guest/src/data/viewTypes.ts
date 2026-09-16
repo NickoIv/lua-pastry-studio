@@ -33,6 +33,7 @@ export interface GuestProduct {
   categoryId: string;
   name: LocalizedText;
   price: Money;
+  imageUrl?: string;
   isMustTry: boolean;
   isNew: boolean;
   isSeasonal: boolean;
@@ -55,6 +56,7 @@ export interface GuestCollection {
   id: string;
   name: LocalizedText;
   description?: LocalizedText;
+  imageUrl?: string;
   featured: boolean;
   productIds: string[];
 }

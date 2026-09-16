@@ -13,9 +13,23 @@
   font-size: var(--lua-text-2xl);
 }
 
-.lua-staff-home__location {
+.lua-staff-home__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-sm);
   margin: 0 0 var(--lua-space-lg);
+}
+
+.lua-staff-home__location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: var(--lua-color-text-muted);
+}
+
+.lua-staff-home__location svg {
+  width: 16px;
+  height: 16px;
 }
 
 .lua-staff-home__scan {

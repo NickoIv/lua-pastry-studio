@@ -327,7 +327,195 @@ demonstrate the shape of the defense (and to have something
 `packages/server/tests/rateLimit.test.ts` can assert against — including
 a live test that a 31st request in a window is actually rejected while
 a different customer's requests are unaffected), not as a
-production-ready control.
+production-ready control. `packages/server/src/routes/media.ts`'s upload
+endpoint gets its own limiter (30 uploads / 5 min per staff session, §9g)
+since it's the most resource-intensive of the newer sensitive endpoints.
+
+## 9d. Staff management & OWNER protection
+
+Lua Admin's Staff screen has real CRUD now — create, edit display
+name/role/location, deactivate/reactivate — but it's deliberately not a
+thin grant + `UPDATE` like the catalog CMS (§9b). Two things make staff
+accounts different: a plaintext password has to be hashed with
+`crypt()` before it's ever written (same as `login_staff` in
+`009_login_functions.sql`), and there's a hard invariant — **no path
+through Lua Admin can create, promote to, demote, deactivate, or
+otherwise touch an OWNER account** — that has to hold even if the API
+layer's own check has a bug.
+
+`infra/db/migrations/015_staff_management.sql` puts both concerns in
+two `SECURITY DEFINER` functions, `admin_create_staff_account` and
+`admin_update_staff_account`. The OWNER guard lives in the function
+body (checked against the *current* role in the database, not
+whatever the caller claims), so it holds even for a hand-crafted SQL
+call — `packages/server/tests/adminStaff.test.ts` proves this by
+calling the function directly, bypassing the API layer's own
+`role !== "OWNER"` pre-check entirely. The API layer's `readAssignableStaffRole`
+validation (`packages/server/src/validation.ts`) is a second, independent
+line of defense — belt and suspenders, the same pattern as §9b's
+delete-safety grants.
+
+One OWNER account is seeded (`marat@lua.dev`) and nothing in this round
+gives any UI a way to create a second one or hand ownership to someone
+else — that's intentionally left as a separate, more heavily-guarded
+future "owner handover" feature, not something to bolt onto ordinary
+staff management.
+
+**A found-and-fixed bug worth noting**: both functions' `RETURNS TABLE(..., role text, ...)`
+signature implicitly declares a PL/pgSQL variable named `role` in scope
+for the whole function body, which shadowed the *table column*
+`staff_profiles.role` in a few unqualified references — Postgres raised
+"column reference is ambiguous" rather than silently doing the wrong
+thing, but it's a sharp edge worth knowing about the next time a
+function's `RETURNS TABLE` column list shares a name with a table it
+queries. Every reference is qualified (`staff_profiles.role`) now.
+
+## 9e. Customer management
+
+`GET /admin/customers` is paginated and searchable (`?q=&page=&pageSize=`)
+and returns each row's balance/order-count/lifetime-spend/last-visit
+from one aggregate query — the `admin_customer_summary` view in
+`infra/db/migrations/016_customer_management.sql` — not one query per
+customer. `GET /admin/customers/:id` (Customer Detail) shows the same
+customer's full order history, ledger, and reward redemptions.
+
+Name and birthday are editable (`PATCH /admin/customers/:id`, grant is
+column-scoped to `first_name`/`last_name`/`birth_date` — see the same
+migration); phone/email are deliberately **not** grantable yet. Customer
+identity is keyed on `customer_profiles.id`, never on phone number —
+changing contact details safely (verification, uniqueness, notifying
+the customer) is a real future feature (phone/email change flow with
+OTP or an equivalent verification step), not something this round's
+column-level grant tries to half-build.
+
+**Staff's QR-scan DTO is unchanged.** `resolve_qr_token()` (§6) still
+returns exactly `{id, displayName, maskedPhone, balance}` — Customer
+Detail existing in Admin doesn't mean Staff's scanner gets to see more;
+`packages/server/tests/adminCustomers.test.ts` asserts the scan
+response still has no `birthDate`/`phone`/`email` keys at all.
+
+## 9f. Manual loyalty point adjustments
+
+The one place an ADMIN/OWNER can move a customer's balance by hand.
+Never a `balance` column update (there is none, §3) and never an edit
+to an existing `loyalty_transactions` row — `admin_adjust_customer_points`
+in `infra/db/migrations/017_manual_loyalty_adjustment.sql` inserts
+exactly one new `manual_adjustment` ledger row, the same shape
+`confirm_order_earn`/`confirm_reward_redemption` already use for
+`earn`/`redeem`.
+
+Two guards live in the database, not just the Customer Detail modal's
+client-side check:
+
+- **`pg_advisory_xact_lock(hashtext(customer_id))`** serializes
+  concurrent balance-affecting operations for that one customer within
+  the transaction, so two simultaneous adjustment requests can't both
+  read a stale balance and both pass the next guard.
+- **The resulting balance can never go negative** — computed and
+  checked inside the same locked transaction, not trusted from the
+  request body.
+
+**Idempotency**: the client can pass an `idempotencyKey`; a retried
+request with the same key returns the original transaction
+(`replayed: true` in the response) instead of double-applying it —
+using the same `loyalty_transactions.idempotency_key` unique
+constraint every other write in this system already relies on (§3).
+Lua Admin's `ManualAdjustmentModal` generates one random key per modal
+open, covering the "double-click / flaky network retry" case without
+any server-side deduplication window or TTL to reason about.
+
+**Reversal foundation, not a reversal feature.** `loyalty_transactions.type`
+already includes `reversal` (`003_loyalty_rewards_qr.sql`, unchanged
+this round) — a future "undo this transaction" feature has a type to
+insert as, following the same append-only, never-edit-old-rows
+discipline. Nothing writes a `reversal` row yet; building the actual
+UI/API for it is future work.
+
+## 9g. Media foundation — local upload, no cloud storage
+
+No Cloudinary/S3/Supabase Storage. `media_assets`
+(`infra/db/migrations/018_media_assets.sql`) is the one governed record
+of anything an admin uploads — kind, path, served URL, alt text,
+dimensions, real (sniffed) MIME type, size, uploader, status. Products
+and collections keep displaying an image through their existing
+`image_url` text column exactly as before (an admin can still paste an
+external URL by hand) — an upload just points that column at the
+asset's served URL, so there's one display semantic ("a URL string"),
+not a second parallel way to reference an image. `media_assets` itself
+is what makes an upload auditable and later removable; it is
+deliberately not wired up as a foreign key from `products`/`collections`
+this round (see Known limitations).
+
+**Upload pipeline** (`packages/server/src/media.ts` +
+`packages/server/src/routes/media.ts`, ADMIN/OWNER only, ~30/5min rate
+limited):
+
+1. `multer` buffers the upload in memory (8 MB cap, enforced by multer
+   itself before any of this code runs).
+2. The file's **real bytes** are sniffed for a PNG/JPEG/WEBP magic
+   number — the client-supplied `Content-Type` header and filename are
+   never trusted; a `.png`-named file whose bytes don't match any of
+   the three accepted magic numbers is rejected regardless of what
+   header it arrived with.
+3. Dimensions are read straight from each format's own header bytes —
+   no image-processing dependency for just that.
+4. The file is written under a **server-generated random UUID
+   filename** (`<uuid>.<ext>`) inside `packages/server/uploads/<kind>/` —
+   the client's original filename is never used to build a path, so
+   there's no path-traversal surface to sanitize in the first place
+   (`../../etc/passwd.png` as a filename just becomes an unrelated
+   random UUID on disk).
+5. A `media_assets` row is inserted and the response is the same shape
+   Admin's `ImageUploadField` and Guest's `<ImageSurface>` both consume.
+
+Served at `/media/<kind>/<file>` via `express.static`, mounted before
+`express.json()` so uploads never touch the JSON body parser. The
+returned URL is server-relative (`/media/product/<id>.png`) — the
+server has no reliable way to know its own externally-reachable origin
+(that changes for LAN/phone testing, §10). Resolving it into an
+absolute URL is the **client's** job:
+`packages/config/src/appConfig.ts#resolveMediaUrl` resolves a relative
+media URL against that app's own configured `VITE_LUA_API_URL` origin.
+**A found-and-fixed bug**: before this existed, Guest (port 5173)
+rendered a server-relative `/media/...` URL as-is, which the browser
+resolved against Guest's *own* origin instead of the API server's
+(port 4000) — the image 404'd, silently fell back to the placeholder,
+and nothing in the network tab looked obviously wrong at a glance. This
+is exactly the kind of bug a real device/LAN test (not just "does the
+API return the right JSON") catches — `e2e/media-upload.spec.ts` now
+asserts an actual `<img>` tag renders on Guest, not just that the API
+response contains a URL string.
+
+`ImageSurface` (`packages/ui`) renders the real image when `src` is
+given and falls back to the existing placeholder mark — including if
+the image fails to load (`onError`) — so a missing/broken image is
+never a broken `<img>` icon in the UI.
+
+## 9h. Timezones
+
+Three different things, three different rules:
+
+- **`timestamptz` columns** (`created_at`, `fulfilled_at`, etc.) — stored
+  and compared correctly by Postgres regardless of session timezone;
+  the "today's orders" dashboard stat (§25) explicitly converts to
+  `Asia/Almaty` before taking `::date`, since "today" on a dashboard
+  should mean the same calendar day to whoever's looking at it,
+  wherever the server process happens to be running.
+- **`date` columns** (`customer_profiles.birth_date`) have no
+  time-of-day or timezone component at all — the only correct handling
+  is to never construct a JS `Date` from one. node-postgres's default
+  parser does exactly that (returns a `Date` at local midnight), which
+  then serializes through `JSON.stringify` as a full UTC timestamp,
+  shifting the calendar day by one for the Asia/Almaty (UTC+5) server
+  this runs on. **Found and fixed this round**: `packages/server/src/db.ts`
+  overrides the OID-1082 (`date`) type parser to keep it as the plain
+  `"YYYY-MM-DD"` string Postgres already sends over the wire — never a
+  `Date` object. `packages/server/src/validation.ts#readOptionalDateOnly`
+  applies the same discipline on the write side, validating the string
+  shape directly rather than round-tripping through `new Date(...)`.
+- **UI display** — Admin's Audit Log timestamps render with an explicit
+  `timeZone: "Asia/Almaty"` (`Intl.DateTimeFormat` option), not
+  whatever timezone the viewer's own browser happens to be in.
 
 ## 10. Local backend infrastructure
 
@@ -346,16 +534,23 @@ and RLS policies in `infra/db/migrations` are close to what a
 
 - `packages/domain/tests` (18) + `packages/utils/tests` (8) — pure
   logic, no I/O, unchanged from the previous milestone.
-- `packages/server/tests` (43) — integration tests against the real
+- `packages/server/tests` (78) — integration tests against the real
   local Postgres (`pnpm test:server`): both loyalty scenarios end to
   end over real HTTP, QR expiry/reuse/invalid-token handling, RBAC
   (cross-customer data leakage, role enforcement, unauthenticated
   access), the Admin catalog CMS (create/persist, RBAC-forbidden,
   Guest-visibility, archive semantics, category delete-safety, audit
-  logging, reward-price snapshot), and the rate limiter (blocked at the
-  limit, unaffected for a different customer) — see
-  `packages/server/tests/{flows,qr,security,adminCatalog,rateLimit}.test.ts`.
-  Each test file truncates and reseeds the database itself
+  logging, reward-price snapshot), the rate limiter (blocked at the
+  limit, unaffected for a different customer), the audit log read
+  endpoint (permissions, filtering, pagination), staff management
+  (create/role-change/deactivate, OWNER protection proven both through
+  the API and by calling the DB function directly), customer management
+  (list aggregate correctness, detail, name/birthday edits, the
+  QR-scan DTO staying minimal), manual point adjustments (ledger-row
+  creation, negative-balance guard, idempotent retry, audit trail), and
+  media upload (valid formats, oversized/spoofed/path-traversal
+  rejection, RBAC) — see `packages/server/tests/*.test.ts`. Each test
+  file truncates and reseeds the database itself
   (`infra/db/scripts/wipe.sh`), so the suite is safe to re-run without a
   manual reset.
 - `playwright.config.ts` + `e2e/*.spec.ts` — real Chromium sessions
@@ -364,8 +559,10 @@ and RLS policies in `infra/db/migrations` are close to what a
   flow proven through both the real Admin and Guest UIs, the reward
   price-change snapshot proven through the real Guest redemption flow
   plus direct API calls for the confirm step (deliberately not driven
-  through Staff's camera scanner — see `docs/QR-SECURITY.md`), and a
-  presentation-smoke spec that captures the 8 screenshots in
+  through Staff's camera scanner — see `docs/QR-SECURITY.md`), full
+  Customer Detail and Staff management lifecycles through the real UI,
+  a local image upload that Guest's Menu actually renders, and a
+  presentation-smoke spec that captures the 11 screenshots in
   `artifacts/presentation/` while asserting zero browser console errors
   across every screen it visits.
 
@@ -378,13 +575,6 @@ and RLS policies in `infra/db/migrations` are close to what a
 - **Rate limiting is in-memory/single-process only** (§9c) and **there's
   no production secrets management** — this server has no deployment
   story beyond localhost/LAN. See `docs/QR-SECURITY.md`.
-- **No `/admin/audit-log` read endpoint yet** — every catalog/loyalty
-  write is logged (§9b), but reading that log back is only proven via a
-  direct database query in tests, not through any UI or API route.
-- **Collections have no hero-media upload** — `imageUrl` is a plain
-  text field (see "no image upload pipeline" below), and the seeded
-  Book Collection descriptions are original placeholder copy for this
-  demo, not real Lua Pastry Studio marketing text.
 - **Cross-device camera testing wasn't physically verified against a
   real iPhone** from this environment — Playwright's fake-camera-device
   flags proved the `getUserMedia`/`BarcodeDetector`/`jsQR` code paths
@@ -392,17 +582,22 @@ and RLS policies in `infra/db/migrations` are close to what a
   but a physical phone's Safari camera permission prompt and HTTPS
   requirements weren't exercised. `docs/LOCAL-BACKEND.md` §6 explains
   exactly what will and won't work and why.
-- **Staff management stays read-only.** Categories, products,
-  availability, collections, and rewards now have real CRUD (§9b) and
-  the Loyalty program screen already wrote to the real backend before
-  that; staff account management (`/admin/staff`) is the one Admin
-  screen still read-only this round. Adding it is additive, not a
-  redesign — the RLS/grant shape already distinguishes `app_admin`.
-- **No image upload pipeline.** Product/collection `imageUrl` is a
-  plain text field an admin can point at any URL; there's no storage
-  bucket, upload UI, or validation that the URL is even an image. Guest
-  renders a local neutral placeholder (`ImageSurface`) when it's empty,
-  by design — no scraped or copyrighted photos ship in this repo.
+- **`media_assets` isn't a foreign key from `products`/`collections`.**
+  An upload sets the same plain `image_url` text column a pasted
+  external URL would (§9g) — deliberate, to avoid a schema migration
+  entangled with every existing catalog row, but it means there's no
+  DB-enforced link from "this product's current image" back to its
+  `media_assets` row, and no automatic cleanup of an asset when the
+  product that used it is later given a different image.
+- **No owner-handover flow.** The one OWNER account is seeded and
+  nothing in Lua Admin can create a second one or transfer the role —
+  intentional (§9d), but a real deployment eventually needs some
+  (separately, more heavily-guarded) way to do this.
+- **Phone/email are still immutable in Lua Admin.** Customer name and
+  birthday are editable (§9e); changing contact details needs a
+  verification flow (OTP or equivalent) this round doesn't build,
+  though the data model (`customer_profiles.id` as the stable identity,
+  never the phone number) already supports adding one later.
 - **No Realtime.** Screens refetch on navigation rather than subscribing
   to live updates — acceptable per the brief's explicit permission to
   prefer refetch-on-focus over a Realtime setup this round.

@@ -67,6 +67,14 @@ loud, clearly-labeled placeholder — fine for a database that only ever
 runs on your own laptop, but replace it before this server is ever
 reachable from anywhere else (see `docs/QR-SECURITY.md`).
 
+Admin's product/collection image uploads land in
+`packages/server/uploads/` (gitignored, created automatically on first
+upload) and are served back at `http://localhost:4000/media/...`.
+Override the location with `MEDIA_UPLOAD_DIR` in `packages/server/.env`
+if you want it somewhere else. Deleting that directory just means the
+next upload recreates it — nothing else in the repo depends on its
+contents.
+
 ## 4. Demo accounts
 
 Seeded by `pnpm db:seed` — **local development credentials only**, not
@@ -79,6 +87,11 @@ real people's data:
 | Lua Staff         | `aigerim@lua.dev` | `LuaStaff123!` | BARISTA       |
 | Lua Staff         | `yerlan@lua.dev`  | `LuaStaff123!` | SHIFT_MANAGER |
 | Lua Staff / Admin | `dana@lua.dev`    | `LuaStaff123!` | ADMIN         |
+| Lua Staff / Admin | `marat@lua.dev`   | `LuaStaff123!` | OWNER         |
+
+`marat@lua.dev` is the one seeded OWNER — no Admin-UI path can create,
+promote to, demote, or deactivate this account; see
+`docs/ARCHITECTURE.md` "Staff management & OWNER protection".
 
 Николай (`nikolay@lua.dev`) starts at exactly **3,288 points** via a
 worked ledger (see `infra/db/seed.sql`), matching the product brief's
@@ -179,7 +192,7 @@ resolve/confirm code path a real camera scan would.
 ```bash
 pnpm test           # packages/domain + packages/utils — no DB needed
 pnpm test:server     # starts/migrates/seeds the DB, then packages/server's
-                      # integration tests (43 tests against the real Postgres)
+                      # integration tests (78 tests against the real Postgres)
 pnpm test:all        # both of the above
 pnpm verify          # typecheck + lint + test:all + build — the full gate
 ```

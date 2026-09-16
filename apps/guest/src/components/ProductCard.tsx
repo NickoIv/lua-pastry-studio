@@ -1,5 +1,6 @@
 import { Badge, Card, ImageSurface, Money } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
+import { resolveMediaUrl } from "@lua/config";
 import type { GuestProduct } from "../data/viewTypes";
 import "./ProductCard.css";
 
@@ -12,7 +13,7 @@ export function ProductCard({ product }: { product: GuestProduct }) {
       className={unavailable ? "lua-product-card lua-product-card--unavailable" : "lua-product-card"}
     >
       <div className="lua-product-card__media">
-        <ImageSurface aspectRatio="4 / 3" label={product.name[locale]} />
+        <ImageSurface aspectRatio="4 / 3" label={product.name[locale]} src={resolveMediaUrl(product.imageUrl)} />
         {unavailable ? (
           <span className="lua-product-card__unavailable-tag">{t("guest.menu.outOfStock")}</span>
         ) : null}

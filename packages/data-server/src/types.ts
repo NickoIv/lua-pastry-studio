@@ -17,11 +17,64 @@ export interface ServerCustomer {
 
 export interface ServerStaff {
   id: string;
+  email?: string;
   displayName: string;
   role: string;
   locationId: string;
   active: boolean;
   createdAt?: string;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CustomerListItem extends ServerCustomer {
+  ordersCount: number;
+  lifetimeSpend: Money;
+  lastOrderAt?: string;
+}
+
+export interface CustomerDetail {
+  profile: ServerCustomer;
+  pointsBalance: number;
+  ledger: ServerLoyaltyTransaction[];
+  orders: ServerOrder[];
+  redemptions: ServerRedemption[];
+}
+
+export interface AdjustPointsResult {
+  transaction: { id: string; points: number; reason: string; createdAt: string };
+  newBalance: number;
+  replayed: boolean;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  actorStaffId?: string;
+  actorDisplayName?: string;
+  targetType: string;
+  targetId: string;
+  summary: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface MediaAsset {
+  id: string;
+  kind: "product" | "collection";
+  url: string;
+  altText?: string;
+  width?: number;
+  height?: number;
+  mimeType: string;
+  sizeBytes: number;
+  status: string;
+  createdAt: string;
 }
 
 export interface ServerLocation {
@@ -185,4 +238,6 @@ export interface AdminDashboard {
   activeMembers: number;
   pointsIssued30d: number;
   pointsRedeemed30d: number;
+  ordersToday: number;
+  activeRewards: number;
 }

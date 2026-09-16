@@ -9,8 +9,11 @@ sharing one domain model, design system, and data layer:
   and shift managers: real camera QR scanning, confirm a purchase, hand over a
   points reward.
 - **Lua Admin** (`apps/admin`) — the desktop back office: real CRUD for
-  categories, products, per-location availability, collections, and
-  rewards; loyalty program settings; customers, orders, staff.
+  categories, products (with local image upload), per-location
+  availability, collections, and rewards; loyalty program settings;
+  customer management (search, detail, name/birthday edit, manual
+  point adjustments); staff management with OWNER-account protection;
+  an audit log; orders.
 
 Every app can run two ways, switched with one env var
 (`VITE_LUA_DATA_MODE`):
@@ -77,7 +80,7 @@ pnpm lint         # eslint .
 pnpm format       # prettier --write .
 pnpm test          # vitest run — packages/domain + packages/utils, no DB needed
 pnpm test:server    # starts/migrates/seeds the DB, then packages/server's
-                     # 43 integration tests against the real Postgres
+                     # 78 integration tests against the real Postgres
 pnpm test:all       # both of the above
 pnpm build         # typecheck everything, then vite build the three apps
 pnpm verify        # typecheck + lint + test:all + build — the full gate
@@ -100,8 +103,9 @@ packages/
                   state machine, repository interfaces, and the MOCK backend.
   data-server/   Typed HTTP client for the REAL backend (packages/server).
   server/        Express API: auth, RLS-aware DB access, atomic loyalty
-                  operations, the Admin catalog CMS, an in-memory rate
-                  limiter — packages/server/tests has 43 integration tests.
+                  operations, the Admin catalog/staff/customer CMS, a
+                  local media upload pipeline, an in-memory rate limiter
+                  — packages/server/tests has 78 integration tests.
   ui/            Design system: tokens, base component set, one icon set.
   i18n/          ru/kk/en dictionaries + a React provider/hook.
   utils/         Money formatting, points pluralization, date formatting.

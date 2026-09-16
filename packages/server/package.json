@@ -16,12 +16,14 @@
     "cors": "catalog:",
     "express": "catalog:",
     "jsonwebtoken": "catalog:",
+    "multer": "catalog:",
     "pg": "catalog:"
   },
   "devDependencies": {
     "@types/cors": "catalog:",
     "@types/express": "catalog:",
     "@types/jsonwebtoken": "catalog:",
+    "@types/multer": "catalog:",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "@types/supertest": "catalog:",

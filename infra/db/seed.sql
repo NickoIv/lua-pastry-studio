@@ -92,7 +92,12 @@ on conflict (id) do update set points_cost = excluded.points_cost, is_active = e
 insert into staff_profiles (id, email, password_hash, display_name, role, location_id, active) values
   ('50000000-0000-0000-0000-000000000001', 'aigerim@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Айгерим', 'BARISTA', '10000000-0000-0000-0000-000000000001', true),
   ('50000000-0000-0000-0000-000000000002', 'yerlan@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Ерлан', 'SHIFT_MANAGER', '10000000-0000-0000-0000-000000000001', true),
-  ('50000000-0000-0000-0000-000000000003', 'dana@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Дана', 'ADMIN', '10000000-0000-0000-0000-000000000001', true)
+  ('50000000-0000-0000-0000-000000000003', 'dana@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Дана', 'ADMIN', '10000000-0000-0000-0000-000000000001', true),
+  -- The one seeded OWNER — see docs/ARCHITECTURE.md "Staff management &
+  -- OWNER protection". No Admin-UI path can create, promote to, demote,
+  -- deactivate, or otherwise touch this row; a future owner-handover
+  -- flow is a deliberately separate, more heavily-guarded feature.
+  ('50000000-0000-0000-0000-000000000004', 'marat@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Марат', 'OWNER', '10000000-0000-0000-0000-000000000001', true)
 on conflict (id) do update set display_name = excluded.display_name, role = excluded.role;
 
 -- ---- Demo guest accounts (LOCAL DEV ONLY) --------------------------------
