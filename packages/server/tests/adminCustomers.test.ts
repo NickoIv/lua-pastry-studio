@@ -101,7 +101,8 @@ describe("Admin customer management", () => {
     expect(keys).not.toContain("birthDate");
     expect(keys).not.toContain("phone");
     expect(keys).not.toContain("email");
-    expect(scan.body.customer).toHaveProperty("maskedPhone");
+    // No phone at all, not even masked — see docs/ARCHITECTURE.md "Staff privacy".
+    expect(keys).not.toContain("maskedPhone");
   });
 
   it("BARISTA cannot read or edit customer detail", async () => {

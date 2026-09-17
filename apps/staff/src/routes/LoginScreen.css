@@ -101,3 +101,28 @@
   color: var(--lua-color-on-dark-danger);
   font-size: var(--lua-text-sm);
 }
+
+.lua-login__tabs {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--lua-space-md);
+  border-bottom: 1px solid var(--lua-color-on-dark-border);
+}
+
+.lua-login__tab {
+  flex: 1;
+  min-height: var(--lua-touch-target);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--lua-color-on-dark-text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lua-login__tab--active {
+  color: var(--lua-color-text-on-accent);
+  border-bottom-color: var(--lua-color-accent-soft);
+}

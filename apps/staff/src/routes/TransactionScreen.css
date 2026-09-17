@@ -165,3 +165,18 @@
   color: var(--lua-color-text-muted);
   font-size: var(--lua-text-sm);
 }
+
+.lua-transaction__preview {
+  margin-bottom: var(--lua-space-md);
+}
+
+.lua-transaction__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-sm);
+}
+
+.lua-transaction__secondary-actions {
+  display: flex;
+  gap: var(--lua-space-sm);
+}

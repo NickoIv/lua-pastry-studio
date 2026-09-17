@@ -9,6 +9,7 @@ import {
   useCreateProduct,
   useDeleteCategory,
   useLocations,
+  useMoveProduct,
   useUpdateCategory,
   useUpdateProduct,
 } from "../data/hooks";
@@ -17,6 +18,7 @@ import { DataTable, type DataTableColumn } from "../components/DataTable";
 import { CategoryFormModal, type CategoryFormValue } from "../components/CategoryFormModal";
 import { ProductFormModal, type ProductFormValue } from "../components/ProductFormModal";
 import { AvailabilityModal } from "../components/AvailabilityModal";
+import { TableRowActions } from "../components/RowActionsMenu";
 
 interface CategoryRow {
   id: string;
@@ -37,6 +39,7 @@ interface ProductRow {
   isSeasonal: boolean;
   active?: boolean;
   imageUrl?: string;
+  sortOrder: number;
 }
 
 export function MenuScreen() {
@@ -47,6 +50,12 @@ export function MenuScreen() {
   const deleteCategory = useDeleteCategory();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const moveProduct = useMoveProduct();
+
+  async function handleMove(productId: string, direction: "up" | "down") {
+    await moveProduct(productId, direction);
+    menu.refresh();
+  }
 
   const [categoryModal, setCategoryModal] = useState<{ open: boolean; value: CategoryFormValue | null }>({
     open: false,
@@ -86,27 +95,51 @@ export function MenuScreen() {
       key: "actions",
       header: "",
       render: (c) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              setCategoryModal({
-                open: true,
-                value: { id: c.id, nameRu: c.name.ru ?? "", nameKk: c.name.kk ?? "", nameEn: c.name.en ?? "", sortOrder: c.sortOrder, active: c.active ?? true },
-              })
-            }
-          >
-            Изменить
-          </Button>
-          <Button variant="ghost" onClick={() => void handleDeleteCategory(c.id)}>
-            Удалить
-          </Button>
-        </div>
+        <TableRowActions
+          actions={[
+            {
+              key: "edit",
+              label: "Изменить",
+              onClick: () =>
+                setCategoryModal({
+                  open: true,
+                  value: { id: c.id, nameRu: c.name.ru ?? "", nameKk: c.name.kk ?? "", nameEn: c.name.en ?? "", sortOrder: c.sortOrder, active: c.active ?? true },
+                }),
+            },
+            { key: "delete", label: "Удалить", tone: "danger", onClick: () => void handleDeleteCategory(c.id) },
+          ]}
+        />
       ),
     },
   ];
 
   const productColumns: DataTableColumn<ProductRow>[] = [
+    {
+      key: "order",
+      header: "",
+      render: (p) => (
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <button
+            type="button"
+            className="lua-form-advanced-toggle"
+            style={{ lineHeight: 1 }}
+            aria-label="Выше"
+            onClick={() => void handleMove(p.id, "up")}
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            className="lua-form-advanced-toggle"
+            style={{ lineHeight: 1 }}
+            aria-label="Ниже"
+            onClick={() => void handleMove(p.id, "down")}
+          >
+            ▼
+          </button>
+        </div>
+      ),
+    },
     { key: "name", header: "Товар", render: (p) => p.name.ru },
     { key: "category", header: "Категория", render: (p) => categoryName(p.categoryId) },
     { key: "price", header: "Цена", align: "right", render: (p) => <Money value={p.price} /> },
@@ -130,47 +163,49 @@ export function MenuScreen() {
       key: "actions",
       header: "",
       render: (p) => (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              setProductModal({
-                open: true,
-                value: {
-                  id: p.id,
-                  categoryId: p.categoryId,
-                  nameRu: p.name.ru ?? "",
-                  nameKk: p.name.kk ?? "",
-                  nameEn: p.name.en ?? "",
-                  descriptionRu: p.description?.ru ?? "",
-                  descriptionKk: p.description?.kk ?? "",
-                  descriptionEn: p.description?.en ?? "",
-                  price: Math.round(p.price.minorUnits / 100),
-                  allergens: (p.allergens ?? []).join(", "),
-                  isSeasonal: p.isSeasonal,
-                  isNew: p.isNew,
-                  isMustTry: p.isMustTry,
-                  active: p.active ?? true,
-                  imageUrl: p.imageUrl ?? "",
-                },
-              })
-            }
-          >
-            Изменить
-          </Button>
-          <Button variant="ghost" onClick={() => setAvailabilityFor({ id: p.id, name: p.name.ru ?? "" })}>
-            Наличие
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              await updateProduct(p.id, { active: p.active === false });
-              menu.refresh();
-            }}
-          >
-            {p.active === false ? "Вернуть" : "Архивировать"}
-          </Button>
-        </div>
+        <TableRowActions
+          actions={[
+            {
+              key: "edit",
+              label: "Изменить",
+              onClick: () =>
+                setProductModal({
+                  open: true,
+                  value: {
+                    id: p.id,
+                    categoryId: p.categoryId,
+                    nameRu: p.name.ru ?? "",
+                    nameKk: p.name.kk ?? "",
+                    nameEn: p.name.en ?? "",
+                    descriptionRu: p.description?.ru ?? "",
+                    descriptionKk: p.description?.kk ?? "",
+                    descriptionEn: p.description?.en ?? "",
+                    price: Math.round(p.price.minorUnits / 100),
+                    allergens: p.allergens ?? [],
+                    isSeasonal: p.isSeasonal,
+                    isNew: p.isNew,
+                    isMustTry: p.isMustTry,
+                    active: p.active ?? true,
+                    imageUrl: p.imageUrl ?? "",
+                  },
+                }),
+            },
+            {
+              key: "availability",
+              label: "Наличие",
+              onClick: () => setAvailabilityFor({ id: p.id, name: p.name.ru ?? "" }),
+            },
+            {
+              key: "archive",
+              label: p.active === false ? "Вернуть" : "Архивировать",
+              tone: p.active === false ? "default" : "danger",
+              onClick: async () => {
+                await updateProduct(p.id, { active: p.active === false });
+                menu.refresh();
+              },
+            },
+          ]}
+        />
       ),
     },
   ];

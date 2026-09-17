@@ -12,6 +12,15 @@ export interface GuestCustomer {
   firstName: string;
   lastName?: string;
   phone: string;
+  homeLocationId?: string;
+}
+
+export interface GuestLocation {
+  id: string;
+  shortName: string;
+  address: string;
+  openHours: string;
+  isActive: boolean;
 }
 
 export interface GuestLoyaltyAccount {
@@ -32,6 +41,8 @@ export interface GuestProduct {
   id: string;
   categoryId: string;
   name: LocalizedText;
+  description?: LocalizedText;
+  allergens: string[];
   price: Money;
   imageUrl?: string;
   isMustTry: boolean;
@@ -44,6 +55,8 @@ export interface GuestProduct {
    * docs/ARCHITECTURE.md "Admin catalog CMS".
    */
   inStockAnywhere: boolean;
+  /** Location ids where this product is currently in stock — used by the location selector (product brief §19/§31). */
+  availableLocationIds: string[];
 }
 
 export interface GuestCategory {
@@ -65,6 +78,7 @@ export interface GuestReward {
   id: string;
   title: LocalizedText;
   pointsCost: number;
+  linkedProductId?: string;
 }
 
 export interface GuestOrderItem {

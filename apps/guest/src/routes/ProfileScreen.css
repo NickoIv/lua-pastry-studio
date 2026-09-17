@@ -48,6 +48,16 @@
   border-bottom: 1px solid var(--lua-color-border);
 }
 
+.lua-profile__row--button {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
 .lua-profile__row-icon {
   width: 20px;
   height: 20px;

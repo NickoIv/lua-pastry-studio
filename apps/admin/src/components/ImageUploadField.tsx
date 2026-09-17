@@ -17,12 +17,20 @@ export interface ImageUploadFieldProps {
 
 const ACCEPT = "image/jpeg,image/png,image/webp";
 
-/** Local upload only — no Cloudinary/S3 — see docs/ARCHITECTURE.md "Media foundation". */
+/**
+ * Local upload only — no Cloudinary/S3 — see docs/ARCHITECTURE.md
+ * "Media foundation". The normal workflow is just Upload / Preview /
+ * Replace / Remove; the raw served path (`/media/product/<uuid>.webp`)
+ * and the manual external-URL field are internal/advanced details that
+ * don't belong in front of a non-technical admin by default (product
+ * brief §17), so both live under "Дополнительно".
+ */
 export function ImageUploadField({ kind, imageUrl, altText, onImageUrlChange, onAltTextChange }: ImageUploadFieldProps) {
   const uploadMedia = useUploadMedia();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -64,19 +72,27 @@ export function ImageUploadField({ kind, imageUrl, altText, onImageUrlChange, on
             style={{ display: "none" }}
             onChange={(e) => void handleFile(e.target.files?.[0])}
           />
-          <input
-            type="text"
-            placeholder="Alt-текст (для доступности)"
-            value={altText}
-            onChange={(e) => onAltTextChange(e.target.value)}
-          />
-          <input
-            type="url"
-            placeholder="или вставьте внешнюю ссылку на изображение"
-            value={imageUrl}
-            onChange={(e) => onImageUrlChange(e.target.value)}
-          />
           {error ? <p className="lua-form-field__error">{error}</p> : null}
+
+          <button type="button" className="lua-form-advanced-toggle" onClick={() => setShowAdvanced((v) => !v)}>
+            {showAdvanced ? "Скрыть дополнительно" : "Дополнительно"}
+          </button>
+          {showAdvanced ? (
+            <>
+              <input
+                type="text"
+                placeholder="Alt-текст (для доступности)"
+                value={altText}
+                onChange={(e) => onAltTextChange(e.target.value)}
+              />
+              <input
+                type="url"
+                placeholder="или вставьте внешнюю ссылку на изображение"
+                value={imageUrl}
+                onChange={(e) => onImageUrlChange(e.target.value)}
+              />
+            </>
+          ) : null}
         </div>
       </div>
     </FormField>

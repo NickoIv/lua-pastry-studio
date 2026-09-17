@@ -24,19 +24,23 @@ export const locations: Location[] = [
   {
     id: asId("loc_dostyk"),
     name: "Lua Pastry Studio — Достык",
+    shortName: "Достык",
     address: "пр. Достык, 89",
     city: "Алматы",
     openHours: "08:00–22:00",
     phone: "+7 727 000 11 22",
+    sortOrder: 1,
     isActive: true,
   },
   {
     id: asId("loc_kok_tobe"),
     name: "Lua Pastry Studio — Кок-Тобе",
+    shortName: "Кок-Тобе",
     address: "ул. Достоевского, 1/1",
     city: "Алматы",
     openHours: "09:00–21:00",
     phone: "+7 727 000 33 44",
+    sortOrder: 2,
     isActive: true,
   },
 ];
@@ -81,6 +85,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: false,
     isMustTry: false,
+    sortOrder: 1,
     availability: availableEverywhere,
   },
   {
@@ -97,6 +102,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: false,
     isMustTry: true,
+    sortOrder: 2,
     availability: availableEverywhere,
   },
   {
@@ -113,6 +119,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: false,
     isMustTry: false,
+    sortOrder: 3,
     availability: availableEverywhere,
   },
   {
@@ -129,6 +136,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: false,
     isMustTry: true,
+    sortOrder: 1,
     availability: availableEverywhere,
   },
   {
@@ -149,6 +157,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: false,
     isMustTry: false,
+    sortOrder: 2,
     availability: availableEverywhere,
   },
   {
@@ -165,6 +174,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: true,
     isMustTry: false,
+    sortOrder: 1,
     availability: availableEverywhere,
   },
   {
@@ -181,6 +191,7 @@ export const products: Product[] = [
     isSeasonal: true,
     isNew: false,
     isMustTry: false,
+    sortOrder: 2,
     availability: availableEverywhere,
   },
   {
@@ -201,6 +212,7 @@ export const products: Product[] = [
     isSeasonal: false,
     isNew: false,
     isMustTry: true,
+    sortOrder: 3,
     availability: availableEverywhere,
   },
 ];
@@ -315,6 +327,8 @@ export const staffUsers: StaffUser[] = [
     displayName: "Айгерим",
     role: "BARISTA",
     locationId: locations[0]!.id,
+    locationIds: [locations[0]!.id, locations[1]!.id],
+    staffCode: "AIGERIM",
     active: true,
     createdAt: "2026-02-01T08:00:00.000Z",
   },
@@ -323,6 +337,8 @@ export const staffUsers: StaffUser[] = [
     displayName: "Ерлан",
     role: "SHIFT_MANAGER",
     locationId: locations[0]!.id,
+    locationIds: [locations[0]!.id],
+    staffCode: "YERLAN",
     active: true,
     createdAt: "2026-01-15T08:00:00.000Z",
   },
@@ -331,6 +347,9 @@ export const staffUsers: StaffUser[] = [
     displayName: "Дана",
     role: "ADMIN",
     locationId: locations[0]!.id,
+    locationIds: [locations[0]!.id, locations[1]!.id],
+    staffCode: "DANA01",
+    email: "dana@lua.dev",
     active: true,
     createdAt: "2025-11-01T08:00:00.000Z",
   },

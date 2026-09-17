@@ -26,7 +26,7 @@ export function HomeScreen() {
 
   const locationName =
     locations.status === "success"
-      ? (locations.data.find((l) => l.id === staff.locationId)?.name ?? "Точка не назначена")
+      ? (locations.data.find((l) => l.id === staff.locationId)?.shortName ?? "Точка не назначена")
       : "…";
 
   return (

@@ -20,7 +20,10 @@ export interface ServerStaff {
   email?: string;
   displayName: string;
   role: string;
+  /** Primary location — always included in locationIds. */
   locationId: string;
+  locationIds: string[];
+  staffCode: string;
   active: boolean;
   createdAt?: string;
 }
@@ -59,6 +62,7 @@ export interface AuditLogEntry {
   actorDisplayName?: string;
   targetType: string;
   targetId: string;
+  targetLabel?: string;
   summary: string;
   metadata?: Record<string, unknown>;
   createdAt: string;
@@ -73,6 +77,8 @@ export interface MediaAsset {
   height?: number;
   mimeType: string;
   sizeBytes: number;
+  originalMimeType?: string;
+  originalSizeBytes?: number;
   status: string;
   createdAt: string;
 }
@@ -80,10 +86,12 @@ export interface MediaAsset {
 export interface ServerLocation {
   id: string;
   name: string;
+  shortName: string;
   address: string;
   city: string;
   phone?: string;
   openHours: string;
+  sortOrder: number;
   isActive: boolean;
 }
 
@@ -110,6 +118,9 @@ export interface ServerProduct {
   isMustTry: boolean;
   active?: boolean;
   inStockAnywhere?: boolean;
+  /** Location ids where this product currently has in_stock = true. */
+  availableLocationIds: string[];
+  sortOrder: number;
 }
 
 export interface ServerCollection {
@@ -225,13 +236,21 @@ export interface ServerQrToken {
 
 export interface ServerScanSummary {
   purpose: "IDENTITY" | "REWARD_REDEMPTION";
-  customer: { id: string; displayName: string; maskedPhone: string; balance: number };
+  // No phone number — Staff doesn't need it for a normal QR operation,
+  // see docs/ARCHITECTURE.md "Staff privacy".
+  customer: { id: string; displayName: string; balance: number };
   redemption?: {
     id: string;
     pointsCost: number;
     rewardTitle: LocalizedText;
     expiresAt: string;
   };
+}
+
+export interface NotificationPreferences {
+  loyalty: boolean;
+  rewards: boolean;
+  promotions: boolean;
 }
 
 export interface AdminDashboard {

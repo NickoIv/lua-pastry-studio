@@ -1,9 +1,26 @@
+import webpush from "web-push";
+
 try {
   // Node 20.6+ native .env loader — packages/server/.env is gitignored;
   // see packages/server/.env.example.
   process.loadEnvFile(new URL("../.env", import.meta.url));
 } catch {
   // No .env file yet — fine, env.ts below falls back to local dev defaults.
+}
+
+/**
+ * A throwaway keypair when none is configured, so Web Push actually
+ * works out of the box for local testing — see docs/ARCHITECTURE.md
+ * "Push notifications". Regenerated every process start, which means
+ * subscriptions created before a restart silently stop being usable;
+ * that's an accepted local-dev-only limitation, never something to fix
+ * by weakening the real (VAPID_*-configured) path.
+ */
+const ephemeralVapidKeys = process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY ? null : webpush.generateVAPIDKeys();
+if (ephemeralVapidKeys) {
+  console.warn(
+    "[lua-server] No VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY set — using a throwaway Web Push keypair for this run only. Set real ones in packages/server/.env for subscriptions to survive a restart.",
+  );
 }
 
 /**
@@ -22,6 +39,9 @@ export const env = {
   corsOrigin: process.env.CORS_ORIGIN ?? "*",
   /** Absolute or relative-to-cwd path; defaults to packages/server/uploads (gitignored) — see docs/ARCHITECTURE.md "Media foundation". */
   mediaUploadDir: process.env.MEDIA_UPLOAD_DIR ?? null,
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? ephemeralVapidKeys?.publicKey ?? "",
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? ephemeralVapidKeys?.privateKey ?? "",
+  vapidSubject: process.env.VAPID_SUBJECT ?? "mailto:owner@example.com",
 };
 
 if (env.jwtSecret === "lua-local-dev-secret-do-not-use-in-production") {

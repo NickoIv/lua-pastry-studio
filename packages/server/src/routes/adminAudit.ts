@@ -16,10 +16,44 @@ interface AuditLogRow {
   actor_display_name: string | null;
   target_type: string;
   target_id: string;
+  target_label: string | null;
   summary: string;
   metadata: Record<string, unknown> | null;
   created_at: string;
 }
+
+/**
+ * A human-readable name for whatever the log entry touched — never the
+ * raw UUID a non-technical admin would see in `target_id` otherwise
+ * (product brief §10/§11). `target_id` is stored as plain text (it can
+ * be "default" for the loyalty program singleton), so the cast is
+ * guarded with a UUID-shape check rather than assuming every row's
+ * target_id is a real uuid.
+ */
+const TARGET_LABEL_SQL = `
+  case
+    when al.target_id !~ '^[0-9a-fA-F-]{36}$' then null
+    else (
+      case al.target_type
+        when 'customer' then (select trim(both from (first_name || ' ' || coalesce(last_name, ''))) from customer_profiles where id = al.target_id::uuid)
+        when 'staff' then (select display_name from staff_profiles where id = al.target_id::uuid)
+        when 'product' then (select name ->> 'ru' from products where id = al.target_id::uuid)
+        when 'product_category' then (select name ->> 'ru' from product_categories where id = al.target_id::uuid)
+        when 'collection' then (select name ->> 'ru' from collections where id = al.target_id::uuid)
+        when 'reward' then (select title ->> 'ru' from rewards where id = al.target_id::uuid)
+        when 'reward_redemption' then (
+          select r.title ->> 'ru' from reward_redemptions rr join rewards r on r.id = rr.reward_id where rr.id = al.target_id::uuid
+        )
+        when 'order' then (
+          select coalesce(external_order_code, 'от ' || to_char(created_at, 'DD.MM.YYYY')) from orders where id = al.target_id::uuid
+        )
+        when 'location' then (select short_name from locations where id = al.target_id::uuid)
+        when 'media_asset' then null
+        else null
+      end
+    )
+  end as target_label
+`;
 
 function isValidAction(value: string): value is AuditAction {
   return (AUDIT_ACTIONS as readonly string[]).includes(value);
@@ -79,7 +113,7 @@ adminAuditRouter.get(
       queryAs<AuditLogRow>(
         "app_admin",
         guards,
-        `select al.*, sp.display_name as actor_display_name
+        `select al.*, sp.display_name as actor_display_name, ${TARGET_LABEL_SQL}
          from audit_logs al
          left join staff_profiles sp on sp.id = al.actor_staff_id
          ${whereClause}
@@ -103,6 +137,7 @@ adminAuditRouter.get(
         actorDisplayName: row.actor_display_name ?? undefined,
         targetType: row.target_type,
         targetId: row.target_id,
+        targetLabel: row.target_label ?? undefined,
         summary: row.summary,
         metadata: row.metadata ?? undefined,
         createdAt: row.created_at,

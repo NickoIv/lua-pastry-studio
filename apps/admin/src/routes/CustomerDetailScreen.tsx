@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge, Button, Card, Money, Points, SectionHeader, Skeleton } from "@lua/ui";
-import { formatOrderDateTime } from "@lua/utils";
+import { formatDateOnly, formatOrderDateTime } from "@lua/utils";
 import { ApiRequestError } from "@lua/data-server";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { useCustomerDetail, useUpdateCustomer } from "../data/hooks";
@@ -121,7 +121,7 @@ export function CustomerDetailScreen() {
                 <p style={{ color: "var(--lua-color-text-muted)" }}>{detail.data.profile.phone}</p>
                 <p style={{ color: "var(--lua-color-text-muted)" }}>
                   Дата рождения:{" "}
-                  {detail.data.profile.birthDate ? detail.data.profile.birthDate.slice(0, 10) : "не указана"}
+                  {detail.data.profile.birthDate ? formatDateOnly(detail.data.profile.birthDate) : "не указана"}
                 </p>
                 <p style={{ color: "var(--lua-color-text-muted)" }}>
                   В клубе с {new Date(detail.data.profile.createdAt).toLocaleDateString("ru-RU")}
@@ -190,6 +190,7 @@ export function CustomerDetailScreen() {
             open={adjustOpen}
             onClose={() => setAdjustOpen(false)}
             customerId={id}
+            customerName={detail.data.profile.firstName}
             currentBalance={detail.data.pointsBalance}
             onAdjusted={() => detail.refresh()}
           />

@@ -1,38 +1,48 @@
+import { Link } from "react-router-dom";
 import { Badge, Card, ImageSurface, Money } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
 import { resolveMediaUrl } from "@lua/config";
 import type { GuestProduct } from "../data/viewTypes";
 import "./ProductCard.css";
 
+/**
+ * Every card is a real link to /menu/product/:id — this was completely
+ * missing before (product brief §12, found on iPhone during owner
+ * testing): tapping a product did nothing. A plain <Link> (not an
+ * onClick handler on a <div>) keeps it keyboard/screen-reader
+ * accessible and works identically in the browser and installed PWA.
+ */
 export function ProductCard({ product }: { product: GuestProduct }) {
   const { t, locale } = useTranslation();
   const unavailable = !product.inStockAnywhere;
   return (
-    <Card
-      padding="none"
-      className={unavailable ? "lua-product-card lua-product-card--unavailable" : "lua-product-card"}
-    >
-      <div className="lua-product-card__media">
-        <ImageSurface aspectRatio="4 / 3" label={product.name[locale]} src={resolveMediaUrl(product.imageUrl)} />
-        {unavailable ? (
-          <span className="lua-product-card__unavailable-tag">{t("guest.menu.outOfStock")}</span>
-        ) : null}
-      </div>
-      <div className="lua-product-card__body">
-        <div className="lua-product-card__badges">
-          {product.isMustTry ? (
-            <Badge tone="accent">{t("guest.menu.mustTry")}</Badge>
-          ) : null}
-          {product.isNew ? <Badge tone="success">{t("guest.menu.new")}</Badge> : null}
-          {product.isSeasonal ? (
-            <Badge tone="warning">{t("guest.menu.seasonal")}</Badge>
+    <Link to={`/menu/product/${product.id}`} className="lua-product-card__link">
+      <Card
+        padding="none"
+        className={unavailable ? "lua-product-card lua-product-card--unavailable" : "lua-product-card"}
+      >
+        <div className="lua-product-card__media">
+          <ImageSurface aspectRatio="4 / 3" label={product.name[locale]} src={resolveMediaUrl(product.imageUrl)} />
+          {unavailable ? (
+            <span className="lua-product-card__unavailable-tag">{t("guest.menu.outOfStock")}</span>
           ) : null}
         </div>
-        <p className="lua-product-card__name">{product.name[locale]}</p>
-        <p className="lua-product-card__price">
-          <Money value={product.price} locale={locale} />
-        </p>
-      </div>
-    </Card>
+        <div className="lua-product-card__body">
+          <div className="lua-product-card__badges">
+            {product.isMustTry ? (
+              <Badge tone="accent">{t("guest.menu.mustTry")}</Badge>
+            ) : null}
+            {product.isNew ? <Badge tone="success">{t("guest.menu.new")}</Badge> : null}
+            {product.isSeasonal ? (
+              <Badge tone="warning">{t("guest.menu.seasonal")}</Badge>
+            ) : null}
+          </div>
+          <p className="lua-product-card__name">{product.name[locale]}</p>
+          <p className="lua-product-card__price">
+            <Money value={product.price} locale={locale} />
+          </p>
+        </div>
+      </Card>
+    </Link>
   );
 }

@@ -8,6 +8,7 @@ import type {
   CategoryInput,
   CollectionInput,
   CustomerUpdateInput,
+  LocationInput,
   ProductInput,
   RewardInput,
   StaffCreateInput,
@@ -143,6 +144,13 @@ export function useUpdateProduct() {
     return apiClient.updateProduct(id, patch);
   }, []);
 }
+export function useMoveProduct() {
+  return useCallback((id: string, direction: "up" | "down") => {
+    requireServerMode();
+    return apiClient.moveProduct(id, direction);
+  }, []);
+}
+
 export function useSetProductAvailability() {
   return useCallback(
     (
@@ -280,6 +288,34 @@ export function useUpdateStaff() {
   return useCallback((id: string, patch: StaffUpdateInput) => {
     requireServerMode();
     return apiClient.updateStaff(id, patch);
+  }, []);
+}
+
+export function useSetStaffLocations() {
+  return useCallback((id: string, locationIds: string[], primaryLocationId: string) => {
+    requireServerMode();
+    return apiClient.setStaffLocations(id, { locationIds, primaryLocationId });
+  }, []);
+}
+
+export function useResetStaffPin() {
+  return useCallback((id: string, pin: string) => {
+    requireServerMode();
+    return apiClient.resetStaffPin(id, pin);
+  }, []);
+}
+
+export function useCreateLocation() {
+  return useCallback((input: LocationInput) => {
+    requireServerMode();
+    return apiClient.createLocation(input);
+  }, []);
+}
+
+export function useUpdateLocation() {
+  return useCallback((id: string, patch: Partial<LocationInput>) => {
+    requireServerMode();
+    return apiClient.updateLocation(id, patch);
   }, []);
 }
 

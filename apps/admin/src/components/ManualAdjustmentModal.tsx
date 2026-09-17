@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Points } from "@lua/ui";
+import { Button, NumericInput, Points } from "@lua/ui";
 import { ApiRequestError } from "@lua/data-server";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { Modal } from "./Modal";
@@ -10,9 +10,12 @@ export interface ManualAdjustmentModalProps {
   open: boolean;
   onClose: () => void;
   customerId: string;
+  customerName: string;
   currentBalance: number;
   onAdjusted: () => void;
 }
+
+type Direction = "credit" | "debit";
 
 /**
  * A signed points delta with a mandatory reason — never a direct
@@ -20,28 +23,46 @@ export interface ManualAdjustmentModalProps {
  * row (infra/db/migrations/017_manual_loyalty_adjustment.sql); this
  * modal's "before/after" preview is purely cosmetic, the actual
  * resulting balance always comes back from the server response.
+ *
+ * The amount is entered as a plain non-negative magnitude plus a
+ * Начислить/Списать toggle rather than one signed field — typing a
+ * "-" on a phone's numeric keypad is unreliable, and this also reads
+ * the confirmation copy naturally ("Начислить Николаю 100 баллов?").
+ * See product brief §7/§8.
  */
 export function ManualAdjustmentModal({
   open,
   onClose,
   customerId,
+  customerName,
   currentBalance,
   onAdjusted,
 }: ManualAdjustmentModalProps) {
   const adjustPoints = useAdjustCustomerPoints();
-  const [delta, setDelta] = useState(0);
+  const [direction, setDirection] = useState<Direction>("credit");
+  const [amount, setAmount] = useState<number | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [idempotencyKey] = useState(() => `admin-ui:${crypto.randomUUID()}`);
 
   if (!open) return null;
 
+  const delta = amount === null ? 0 : direction === "credit" ? amount : -amount;
   const preview = currentBalance + delta;
 
-  async function handleSubmit() {
-    if (delta === 0) {
-      setError("Укажите ненулевую корректировку.");
+  function reset() {
+    setDirection("credit");
+    setAmount(null);
+    setReason("");
+    setError(null);
+    setConfirming(false);
+  }
+
+  function handleRequestConfirm() {
+    if (amount === null || amount <= 0) {
+      setError("Укажите количество баллов (больше нуля).");
       return;
     }
     if (!reason.trim()) {
@@ -52,44 +73,115 @@ export function ManualAdjustmentModal({
       setError("Итоговый баланс не может быть отрицательным.");
       return;
     }
+    setError(null);
+    setConfirming(true);
+  }
+
+  async function handleConfirm() {
     setBusy(true);
     setError(null);
     try {
       await adjustPoints(customerId, { points: delta, reason: reason.trim(), idempotencyKey });
-      setDelta(0);
-      setReason("");
+      reset();
       onAdjusted();
       onClose();
     } catch (err) {
       setError(err instanceof ApiRequestError ? API_ERROR_MESSAGES_RU[err.code] : "Не удалось выполнить корректировку");
+      setConfirming(false);
     } finally {
       setBusy(false);
     }
   }
 
+  function handleClose() {
+    reset();
+    onClose();
+  }
+
+  if (confirming) {
+    const verb = direction === "credit" ? "Начислить" : "Списать";
+    const preposition = direction === "credit" ? "" : "у ";
+    return (
+      <Modal
+        open={open}
+        onClose={handleClose}
+        title="Подтвердите корректировку"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}>
+              Назад
+            </Button>
+            <Button onClick={() => void handleConfirm()} disabled={busy}>
+              {busy ? "Сохранение…" : "Подтвердить"}
+            </Button>
+          </>
+        }
+      >
+        <p style={{ fontSize: "var(--lua-text-md)", marginBottom: "var(--lua-space-md)" }}>
+          {verb} {preposition}
+          {customerName} <Points value={amount ?? 0} /> баллов?
+        </p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "var(--lua-space-sm)",
+            background: "var(--lua-color-surface-alt)",
+            borderRadius: "var(--lua-radius-sm)",
+          }}
+        >
+          <span>
+            Баланс сейчас: <Points value={currentBalance} />
+          </span>
+          <span>
+            После: <Points value={preview} />
+          </span>
+        </div>
+        {error ? (
+          <p className="lua-form-field__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </Modal>
+    );
+  }
+
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title="Корректировать баллы"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={busy}>
+          <Button variant="secondary" onClick={handleClose} disabled={busy}>
             Отмена
           </Button>
-          <Button onClick={() => void handleSubmit()} disabled={busy}>
-            {busy ? "Сохранение…" : "Подтвердить"}
+          <Button onClick={handleRequestConfirm} disabled={busy}>
+            Далее
           </Button>
         </>
       }
     >
-      <FormField label="Корректировка, баллы" htmlFor="adjust-delta" hint="Положительное число — начисление, отрицательное — списание">
-        <input
-          id="adjust-delta"
-          type="number"
-          value={delta}
-          onChange={(e) => setDelta(Number(e.target.value))}
-        />
+      <FormField label="Операция">
+        <div className="lua-form-row">
+          <Button
+            variant={direction === "credit" ? "primary" : "secondary"}
+            onClick={() => setDirection("credit")}
+            fullWidth
+          >
+            Начислить
+          </Button>
+          <Button
+            variant={direction === "debit" ? "primary" : "secondary"}
+            onClick={() => setDirection("debit")}
+            fullWidth
+          >
+            Списать
+          </Button>
+        </div>
+      </FormField>
+      <FormField label="Количество баллов" htmlFor="adjust-amount">
+        <NumericInput id="adjust-amount" value={amount} onChange={setAmount} placeholder="100" />
       </FormField>
       <FormField label="Причина" htmlFor="adjust-reason">
         <textarea
@@ -110,7 +202,7 @@ export function ManualAdjustmentModal({
         }}
       >
         <span>
-          Баланс: <Points value={currentBalance} />
+          Баланс сейчас: <Points value={currentBalance} />
         </span>
         <span>
           После: <Points value={preview} />

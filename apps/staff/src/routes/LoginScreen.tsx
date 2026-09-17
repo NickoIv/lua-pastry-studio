@@ -48,11 +48,76 @@ function MockRolePicker() {
   );
 }
 
-function ServerLoginForm() {
+/**
+ * The default employee login is a staff code + PIN (product brief §6 —
+ * no individual work email required), so it's the default tab here.
+ * Email+password remains available for accounts that have one (OWNER/
+ * ADMIN demo accounts, or anyone an ADMIN opted into it for) — see
+ * docs/ARCHITECTURE.md §10c.
+ */
+function PinLoginForm() {
   const { signIn } = useSession();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("aigerim@lua.dev");
-  const [password, setPassword] = useState("LuaStaff123!");
+  const [staffCode, setStaffCode] = useState("AIGERIM");
+  const [pin, setPin] = useState("4821");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const { token, staff } = await apiClient.loginStaffByCode(staffCode, pin);
+      signIn(staff, token);
+      navigate("/");
+    } catch (err) {
+      setError(
+        err instanceof ApiRequestError
+          ? API_ERROR_MESSAGES_RU[err.code]
+          : "Что-то пошло не так",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="lua-login__form" onSubmit={handleSubmit}>
+      <label className="lua-login__field">
+        <span>Код сотрудника</span>
+        <input
+          type="text"
+          value={staffCode}
+          onChange={(e) => setStaffCode(e.target.value.toUpperCase())}
+          autoComplete="username"
+          placeholder="AIGERIM"
+        />
+      </label>
+      <label className="lua-login__field">
+        <span>PIN</span>
+        <input
+          type="password"
+          inputMode="numeric"
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+          autoComplete="current-password"
+          placeholder="4826"
+        />
+      </label>
+      {error ? <p className="lua-login__error">{error}</p> : null}
+      <Button type="submit" fullWidth disabled={busy}>
+        {busy ? "Входим…" : "Начать смену"}
+      </Button>
+    </form>
+  );
+}
+
+function EmailLoginForm() {
+  const { signIn } = useSession();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -100,6 +165,35 @@ function ServerLoginForm() {
         {busy ? "Входим…" : "Начать смену"}
       </Button>
     </form>
+  );
+}
+
+function ServerLoginForm() {
+  const [mode, setMode] = useState<"pin" | "email">("pin");
+  return (
+    <>
+      <div className="lua-login__tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "pin"}
+          className={`lua-login__tab${mode === "pin" ? " lua-login__tab--active" : ""}`}
+          onClick={() => setMode("pin")}
+        >
+          Код + PIN
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "email"}
+          className={`lua-login__tab${mode === "email" ? " lua-login__tab--active" : ""}`}
+          onClick={() => setMode("email")}
+        >
+          Email
+        </button>
+      </div>
+      {mode === "pin" ? <PinLoginForm /> : <EmailLoginForm />}
+    </>
   );
 }
 

@@ -66,8 +66,11 @@ export interface StaffUser {
   id: StaffUserId;
   displayName: string;
   role: Role;
+  /** Primary location — always included in locationIds. */
   locationId: LocationId;
-  pin?: string;
+  locationIds: LocationId[];
+  staffCode: string;
+  email?: string;
   active: boolean;
   createdAt: ISODateTimeString;
 }

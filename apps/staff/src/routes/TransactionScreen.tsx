@@ -1,30 +1,64 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { ServerScanSummary } from "@lua/data-server";
 import { ApiRequestError } from "@lua/data-server";
-import { API_ERROR_MESSAGES_RU } from "@lua/types";
+import { API_ERROR_MESSAGES_RU, type LoyaltyProgram } from "@lua/types";
+import { calculatePointsEarned } from "@lua/domain";
 import { Button, Card, CheckIcon, Points, Skeleton } from "@lua/ui";
-import { useConfirmOrderEarn, useConfirmRedemption, useOpenOrders } from "../data/hooks";
+import { useConfirmOrderEarn, useConfirmRedemption, useLoyaltyProgram, useOpenOrders } from "../data/hooks";
 import "./TransactionScreen.css";
 
 interface TransactionState {
   summary: ServerScanSummary;
 }
 
+/**
+ * The wrapper exists only to force a full remount per scan — React
+ * Router reuses the same TransactionScreen instance across repeated
+ * navigations to "/transaction", so without this every piece of local
+ * state (selected order, done/result, error) survived from the
+ * previous scan into the next one. That was the exact HIGH PRIORITY
+ * bug the owner hit manually (product brief §25): scan identity, back
+ * out, scan a reward QR, and the old order/balance was still showing.
+ * `location.key` is a fresh string on every navigation, including
+ * pushes to the same path, so keying on it guarantees "every scan
+ * begins with clean transaction state" without hand-tracking which
+ * fields to reset.
+ */
 export function TransactionScreen() {
+  const location = useLocation();
+  return <TransactionScreenContent key={location.key} />;
+}
+
+function TransactionScreenContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as TransactionState | null;
   const openOrders = useOpenOrders();
+  const loyaltyProgram = useLoyaltyProgram();
   const confirmOrderEarn = useConfirmOrderEarn();
   const confirmRedemption = useConfirmRedemption();
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expired, setExpired] = useState(false);
   const [done, setDone] = useState(false);
   const [resultBalance, setResultBalance] = useState<number | null>(null);
   const [resultPoints, setResultPoints] = useState<number | null>(null);
+
+  // Exactly one eligible order → select it automatically (product
+  // brief §27) instead of forcing the barista to tap it first.
+  useEffect(() => {
+    if (openOrders.status === "success" && openOrders.data.length === 1 && !selectedOrderId) {
+      // openOrders resolves asynchronously (a real fetch, in server
+      // mode), so this is the standard "derive selection once data
+      // arrives" effect, not a synchronous same-render cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedOrderId(openOrders.data[0]!.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openOrders.status]);
 
   if (!state) {
     return (
@@ -38,6 +72,28 @@ export function TransactionScreen() {
   }
 
   const { summary } = state;
+  const selectedOrder =
+    openOrders.status === "success" ? openOrders.data.find((o) => o.id === selectedOrderId) : undefined;
+  // A preview only — reuses the exact same formula the server's
+  // confirm_order_earn applies (packages/domain's calculatePointsEarned,
+  // no tier multiplier, matching infra/db/migrations/005_functions.sql),
+  // but the actual awarded amount always comes back from the server's
+  // own response after confirming. See product brief §27.
+  const earnPreview =
+    selectedOrder && loyaltyProgram.status === "success"
+      ? calculatePointsEarned(selectedOrder.total, loyaltyProgram.data as LoyaltyProgram)
+      : null;
+
+  function handleApiError(err: unknown) {
+    if (err instanceof ApiRequestError) {
+      setError(API_ERROR_MESSAGES_RU[err.code]);
+      if (err.code === "QR_EXPIRED" || err.code === "REDEMPTION_ALREADY_COMPLETED" || err.code === "ORDER_ALREADY_REWARDED") {
+        setExpired(true);
+      }
+    } else {
+      setError("Не удалось подтвердить операцию");
+    }
+  }
 
   async function confirmEarn() {
     if (!selectedOrderId) return;
@@ -49,11 +105,7 @@ export function TransactionScreen() {
       setResultBalance(summary.customer.balance + result.order.pointsEarned);
       setDone(true);
     } catch (err) {
-      setError(
-        err instanceof ApiRequestError
-          ? API_ERROR_MESSAGES_RU[err.code]
-          : "Не удалось подтвердить операцию",
-      );
+      handleApiError(err);
     } finally {
       setBusy(false);
     }
@@ -68,11 +120,7 @@ export function TransactionScreen() {
       setResultBalance(result.newBalance);
       setDone(true);
     } catch (err) {
-      setError(
-        err instanceof ApiRequestError
-          ? API_ERROR_MESSAGES_RU[err.code]
-          : "Не удалось подтвердить операцию",
-      );
+      handleApiError(err);
     } finally {
       setBusy(false);
     }
@@ -104,15 +152,22 @@ export function TransactionScreen() {
     <div className="lua-transaction">
       <Card className="lua-transaction__customer">
         <p className="lua-transaction__customer-name">{summary.customer.displayName}</p>
-        <p className="lua-transaction__customer-meta">
-          Lua Club · {summary.customer.maskedPhone}
-        </p>
+        <p className="lua-transaction__customer-meta">Lua Club</p>
         <p className="lua-transaction__customer-balance">
           Баланс: <Points value={summary.customer.balance} />
         </p>
       </Card>
 
-      {error ? <p className="lua-transaction__error">{error}</p> : null}
+      {error ? (
+        <div className="lua-transaction__error">
+          <p style={{ margin: 0 }}>{error}</p>
+          {expired ? (
+            <Button variant="secondary" fullWidth onClick={() => navigate("/scan")} style={{ marginTop: 8 }}>
+              Сканировать новый код
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {summary.purpose === "IDENTITY" ? (
         <Card className="lua-transaction__op">
@@ -145,13 +200,51 @@ export function TransactionScreen() {
           ) : (
             <p className="lua-transaction__empty">Нет открытых заказов</p>
           )}
-          <Button
-            fullWidth
-            disabled={busy || !selectedOrderId}
-            onClick={() => void confirmEarn()}
-          >
-            {busy ? "Подтверждение…" : "Подтвердить покупку"}
-          </Button>
+
+          {selectedOrder ? (
+            <div className="lua-transaction__preview">
+              <div className="lua-transaction__op-row">
+                <span className="lua-transaction__op-label">Заказ</span>
+                <span className="lua-transaction__op-value">
+                  {selectedOrder.externalOrderCode ?? "—"}
+                </span>
+              </div>
+              <div className="lua-transaction__op-row">
+                <span className="lua-transaction__op-label">Итого</span>
+                <span className="lua-transaction__op-value">
+                  {(selectedOrder.total.minorUnits / 100).toLocaleString("ru-RU")} ₸
+                </span>
+              </div>
+              {earnPreview !== null ? (
+                <div className="lua-transaction__op-row">
+                  <span className="lua-transaction__op-label">Начислится</span>
+                  <Points value={earnPreview} signed />
+                </div>
+              ) : null}
+              <div className="lua-transaction__op-row lua-transaction__op-total">
+                <span className="lua-transaction__op-label">Баланс после</span>
+                <Points value={summary.customer.balance + (earnPreview ?? 0)} />
+              </div>
+            </div>
+          ) : null}
+
+          <div className="lua-transaction__actions">
+            <Button
+              fullWidth
+              disabled={busy || !selectedOrderId}
+              onClick={() => void confirmEarn()}
+            >
+              {busy ? "Подтверждение…" : "Подтвердить покупку"}
+            </Button>
+            <div className="lua-transaction__secondary-actions">
+              <Button variant="secondary" fullWidth onClick={() => navigate("/scan")}>
+                Отмена
+              </Button>
+              <Button variant="secondary" fullWidth onClick={() => navigate("/scan")}>
+                Сканировать другой QR
+              </Button>
+            </div>
+          </div>
         </Card>
       ) : summary.redemption ? (
         <Card className="lua-transaction__op">
@@ -168,9 +261,19 @@ export function TransactionScreen() {
             <span className="lua-transaction__op-label">После операции</span>
             <Points value={summary.customer.balance - summary.redemption.pointsCost} />
           </div>
-          <Button fullWidth disabled={busy} onClick={() => void confirmRedeem()}>
-            {busy ? "Подтверждение…" : "Подтвердить выдачу"}
-          </Button>
+          <div className="lua-transaction__actions">
+            <Button fullWidth disabled={busy} onClick={() => void confirmRedeem()}>
+              {busy ? "Подтверждение…" : "Подтвердить выдачу"}
+            </Button>
+            <div className="lua-transaction__secondary-actions">
+              <Button variant="secondary" fullWidth onClick={() => navigate("/scan")}>
+                Отмена
+              </Button>
+              <Button variant="secondary" fullWidth onClick={() => navigate("/scan")}>
+                Сканировать другой QR
+              </Button>
+            </div>
+          </div>
         </Card>
       ) : null}
     </div>

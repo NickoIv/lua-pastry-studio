@@ -167,3 +167,11 @@ export const GlobeIcon = createIcon(
     <path d="M12 3.5c2.4 2.3 3.7 5.3 3.7 8.5s-1.3 6.2-3.7 8.5c-2.4-2.3-3.7-5.3-3.7-8.5S9.6 5.8 12 3.5Z" />
   </>,
 );
+
+export const MoreIcon = createIcon(
+  <>
+    <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    <circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" />
+  </>,
+);

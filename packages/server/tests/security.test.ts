@@ -98,7 +98,7 @@ describe("RBAC / security", () => {
     expect(res.body.error.code).toBe("UNAUTHENTICATED");
   });
 
-  it("staff never receives a customer's raw phone/email — only the masked, minimal DTO", async () => {
+  it("staff never receives a customer's raw phone/email, or any phone number at all — only the minimal DTO", async () => {
     const customerToken = await loginCustomer(SEED.nikolayEmail, SEED.nikolayPassword);
     const issued = await request(app)
       .post("/api/me/qr/identity")
@@ -109,9 +109,13 @@ describe("RBAC / security", () => {
       .set("Authorization", `Bearer ${staffToken}`)
       .send({ token: issued.body.token });
 
+    // No phone field at all (not even masked) — Staff doesn't need a
+    // customer's phone number for a normal QR operation, see
+    // docs/ARCHITECTURE.md "Staff privacy".
     const keys = Object.keys(resolved.body.customer);
-    expect(keys.sort()).toEqual(["balance", "displayName", "id", "maskedPhone"]);
-    expect(resolved.body.customer.maskedPhone).not.toContain("701 234 56 78");
+    expect(keys.sort()).toEqual(["balance", "displayName", "id"]);
+    expect(JSON.stringify(resolved.body)).not.toContain("701 234 56 78");
+    expect(JSON.stringify(resolved.body)).not.toMatch(/phone/i);
   });
 
   it("a wrong password is rejected without revealing whether the email exists", async () => {

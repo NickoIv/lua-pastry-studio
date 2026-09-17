@@ -6,6 +6,7 @@ import type {
   CustomerDetail,
   CustomerListItem,
   MediaAsset,
+  NotificationPreferences,
   Paginated,
   ProductAvailabilityRow,
   ServerCategory,
@@ -44,6 +45,7 @@ export interface ProductInput {
   isMustTry?: boolean;
   active?: boolean;
   imageUrl?: string | null;
+  sortOrder?: number;
 }
 
 export interface CollectionInput {
@@ -71,11 +73,15 @@ export interface RewardInput {
 }
 
 export interface StaffCreateInput {
-  email: string;
-  password: string;
   displayName: string;
   role: string;
-  locationId: string;
+  locationIds: string[];
+  primaryLocationId: string;
+  staffCode: string;
+  /** At least one login method required — PIN (preferred) or email+password. */
+  pin?: string;
+  email?: string;
+  password?: string;
 }
 
 export interface StaffUpdateInput {
@@ -85,10 +91,27 @@ export interface StaffUpdateInput {
   locationId?: string;
 }
 
+export interface StaffLocationsInput {
+  locationIds: string[];
+  primaryLocationId: string;
+}
+
+export interface LocationInput {
+  name: string;
+  shortName: string;
+  address: string;
+  city: string;
+  phone?: string;
+  openHours: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
 export interface CustomerUpdateInput {
   firstName?: string;
   lastName?: string | null;
   birthDate?: string | null;
+  homeLocationId?: string | null;
 }
 
 export interface AdjustPointsInput {
@@ -141,6 +164,9 @@ export class LuaApiClient {
   loginStaff(email: string, password: string) {
     return this.http.post<StaffSession>("/auth/staff/login", { email, password });
   }
+  loginStaffByCode(staffCode: string, pin: string) {
+    return this.http.post<StaffSession>("/auth/staff/login-pin", { staffCode, pin });
+  }
 
   // ---- Menu ----------------------------------------------------------------
   listCategories() {
@@ -159,6 +185,9 @@ export class LuaApiClient {
   // ---- Guest: profile / loyalty / orders / rewards / QR ----------------
   getMyProfile() {
     return this.http.get<ServerCustomer>("/me/profile");
+  }
+  updateMyProfile(patch: CustomerUpdateInput) {
+    return this.http.patch<ServerCustomer>("/me/profile", patch);
   }
   getMyLoyaltyAccount() {
     return this.http.get<ServerLoyaltyAccount>("/me/loyalty/account");
@@ -270,6 +299,9 @@ export class LuaApiClient {
   updateProduct(id: string, patch: Partial<ProductInput>) {
     return this.http.patch<ServerProduct>(`/admin/products/${id}`, patch);
   }
+  moveProduct(id: string, direction: "up" | "down") {
+    return this.http.post(`/admin/products/${id}/move`, { direction });
+  }
 
   getProductAvailability(productId: string) {
     return this.http.get<ProductAvailabilityRow[]>(`/admin/products/${productId}/availability`);
@@ -311,6 +343,20 @@ export class LuaApiClient {
   updateStaff(id: string, patch: StaffUpdateInput) {
     return this.http.patch<ServerStaff>(`/admin/staff/${id}`, patch);
   }
+  setStaffLocations(id: string, input: StaffLocationsInput) {
+    return this.http.put<ServerStaff>(`/admin/staff/${id}/locations`, input);
+  }
+  resetStaffPin(id: string, pin: string) {
+    return this.http.post<{ ok: true }>(`/admin/staff/${id}/reset-pin`, { pin });
+  }
+
+  // ---- Admin: locations --------------------------------------------------
+  createLocation(input: LocationInput) {
+    return this.http.post<ServerLocation>("/admin/locations", input);
+  }
+  updateLocation(id: string, patch: Partial<LocationInput>) {
+    return this.http.patch<ServerLocation>(`/admin/locations/${id}`, patch);
+  }
 
   // ---- Admin: customer management -------------------------------------
   listAdminCustomers(params?: { q?: string; page?: number; pageSize?: number }) {
@@ -343,6 +389,23 @@ export class LuaApiClient {
     if (query?.pageSize) params.set("pageSize", String(query.pageSize));
     const qs = params.toString();
     return this.http.get<Paginated<AuditLogEntry>>(`/admin/audit-log${qs ? `?${qs}` : ""}`);
+  }
+
+  // ---- Guest: push notifications ------------------------------------------
+  getPushPublicKey() {
+    return this.http.get<{ publicKey: string | null }>("/push/public-key");
+  }
+  subscribePush(subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) {
+    return this.http.post<{ ok: true }>("/me/push-subscriptions", subscription);
+  }
+  unsubscribePush(endpoint: string) {
+    return this.http.delete<{ ok: true }>(`/me/push-subscriptions?endpoint=${encodeURIComponent(endpoint)}`);
+  }
+  getNotificationPreferences() {
+    return this.http.get<NotificationPreferences>("/me/notification-preferences");
+  }
+  updateNotificationPreferences(patch: Partial<NotificationPreferences>) {
+    return this.http.patch<NotificationPreferences>("/me/notification-preferences", patch);
   }
 
   // ---- Admin: media upload -----------------------------------------------

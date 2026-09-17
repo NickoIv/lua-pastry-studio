@@ -38,6 +38,8 @@ export const AUDIT_ACTIONS = [
   "customer.birthday_updated",
   "media.uploaded",
   "media.removed",
+  "location.created",
+  "location.updated",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

@@ -14,8 +14,11 @@ import { useTranslation } from "@lua/i18n";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { ApiRequestError } from "@lua/data-server";
 import {
+  useCustomerProfile,
   useLoyaltyAccount,
   useLoyaltyTransactions,
+  useLocations,
+  useMenu,
   useRequestRedemption,
   useRewards,
 } from "../data/hooks";
@@ -28,13 +31,33 @@ export function ClubScreen() {
   const rewards = useRewards();
   const transactions = useLoyaltyTransactions();
   const requestRedemption = useRequestRedemption();
+  const profile = useCustomerProfile();
+  const locations = useLocations();
+  const menu = useMenu();
   const [pendingRewardId, setPendingRewardId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const balance =
     account.status === "success" && account.data ? account.data.pointsBalance : null;
 
-  async function handleRedeem(rewardId: string, pointsCost: number) {
+  const selectedLocationId =
+    profile.status === "success" && profile.data?.homeLocationId
+      ? profile.data.homeLocationId
+      : (locations.status === "success" ? locations.data[0]?.id : undefined);
+  const selectedLocationName =
+    locations.status === "success"
+      ? locations.data.find((l) => l.id === selectedLocationId)?.shortName
+      : undefined;
+
+  /** A reward is only "unavailable here" if its linked product is tracked and explicitly out of stock at the selected location — see product brief §31. */
+  function isRewardUnavailableHere(linkedProductId?: string): boolean {
+    if (!linkedProductId || !selectedLocationId || menu.status !== "success") return false;
+    const product = menu.data.products.find((p) => p.id === linkedProductId);
+    if (!product) return false;
+    return !product.availableLocationIds.includes(selectedLocationId);
+  }
+
+  async function handleRedeem(rewardId: string, pointsCost: number, rewardTitle: string) {
     if (balance !== null && balance < pointsCost) {
       setError(t("guest.club.notEnoughPoints"));
       return;
@@ -49,6 +72,9 @@ export function ClubScreen() {
           redemptionId: redemption.id,
           encodedToken: token,
           expiresAt,
+          rewardTitle,
+          pointsCost,
+          balanceBefore: balance ?? 0,
         },
       });
     } catch (err) {
@@ -100,17 +126,24 @@ export function ClubScreen() {
                         <Points value={reward.pointsCost} locale={locale} />
                       </p>
                     </div>
-                    <Button
-                      size="md"
-                      variant="secondary"
-                      disabled={
-                        pendingRewardId === reward.id ||
-                        (balance !== null && balance < reward.pointsCost)
-                      }
-                      onClick={() => handleRedeem(reward.id, reward.pointsCost)}
-                    >
-                      {t("guest.club.redeemButton")}
-                    </Button>
+                    {isRewardUnavailableHere(reward.linkedProductId) ? (
+                      <span className="lua-club__reward-shortage">
+                        {t("guest.club.unavailableHere", { location: selectedLocationName ?? "" })}
+                      </span>
+                    ) : balance !== null && balance < reward.pointsCost ? (
+                      <span className="lua-club__reward-shortage">
+                        {t("guest.club.shortBy", { points: reward.pointsCost - balance })}
+                      </span>
+                    ) : (
+                      <Button
+                        size="md"
+                        variant="secondary"
+                        disabled={pendingRewardId === reward.id}
+                        onClick={() => handleRedeem(reward.id, reward.pointsCost, reward.title[locale])}
+                      >
+                        {t("guest.club.redeemButton")}
+                      </Button>
+                    )}
                   </Card>
                 ))
               : null}

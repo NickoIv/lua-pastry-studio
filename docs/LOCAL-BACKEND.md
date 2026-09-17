@@ -111,6 +111,18 @@ real people's data:
 | Lua Staff / Admin | `dana@lua.dev`    | `LuaStaff123!` | ADMIN         |
 | Lua Staff / Admin | `marat@lua.dev`   | `LuaStaff123!` | OWNER         |
 
+Every new employee an ADMIN/OWNER creates from Lua Admin → Сотрудники
+uses a **staff code + PIN** instead of an email/password — no
+individual work email required (see `docs/ARCHITECTURE.md` §10c). The
+seeded accounts above keep working with email+password (existing
+tooling/tests rely on it) and also have a PIN as a second option:
+
+| Staff code | PIN    | Same person as |
+| ---------- | ------ | --------------- |
+| `AIGERIM`  | `4821` | `aigerim@lua.dev` |
+| `YERLAN`   | `1932` | `yerlan@lua.dev` |
+| `DANA01`   | `5310` | `dana@lua.dev` |
+
 `marat@lua.dev` is the one seeded OWNER — no Admin-UI path can create,
 promote to, demote, or deactivate this account; see
 `docs/ARCHITECTURE.md` "Staff management & OWNER protection".
@@ -226,7 +238,7 @@ resolve/confirm code path a real camera scan would.
 ```bash
 pnpm test           # packages/domain + packages/utils — no DB needed
 pnpm test:server     # starts/migrates/seeds the DB, then packages/server's
-                      # integration tests (97 tests against the real Postgres)
+                      # integration tests (115 tests against the real Postgres)
 pnpm test:all        # both of the above
 pnpm verify          # typecheck + lint + test:all + build — the full gate
 ```

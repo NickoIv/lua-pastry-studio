@@ -78,6 +78,40 @@ describe("Admin audit log", () => {
     }
   });
 
+  it("resolves a human-readable targetLabel instead of a raw UUID (product brief §10/§11)", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const created = await request(app)
+      .post("/api/admin/categories")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: { ru: "Категория с меткой" } });
+    expect(created.status).toBe(201);
+
+    const res = await request(app)
+      .get("/api/admin/audit-log?action=catalog.category.created")
+      .set("Authorization", `Bearer ${adminToken}`);
+    const entry = res.body.items.find((e: { targetId: string }) => e.targetId === created.body.id);
+    expect(entry).toBeDefined();
+    expect(entry.targetLabel).toBe("Категория с меткой");
+  });
+
+  it("a manual loyalty adjustment's audit entry resolves the customer's name as its targetLabel and carries the reason in metadata", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    await request(app)
+      .post(`/api/admin/customers/${SEED.nikolayId}/adjust-points`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ points: 10, reason: "Тестовая метка" });
+
+    const res = await request(app)
+      .get(`/api/admin/audit-log?action=loyalty.manual_adjustment&actorStaffId=${SEED.adminId}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    const entry = res.body.items[0];
+    expect(entry.targetLabel).toBe("Николай");
+    // The Audit list row shows "Причина: …" inline (product brief §11),
+    // which reads this metadata field directly instead of re-parsing it
+    // out of the summary sentence.
+    expect(entry.metadata.reason).toBe("Тестовая метка");
+  });
+
   it("results are ordered newest first and paginated", async () => {
     const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
     const res = await request(app)

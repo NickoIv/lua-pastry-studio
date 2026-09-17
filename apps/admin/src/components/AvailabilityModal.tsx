@@ -58,7 +58,7 @@ export function AvailabilityModal({ open, onClose, productId, productName, locat
             return (
               <div key={loc.id} style={{ display: "flex", flexDirection: "column", gap: 6, paddingBottom: 10, borderBottom: "1px solid var(--lua-color-border)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontWeight: 600 }}>{loc.name}</span>
+                  <span style={{ fontWeight: 600 }}>{loc.shortName}</span>
                   <Button
                     variant={inStock ? "secondary" : "destructive"}
                     disabled={busyLocationId === loc.id}

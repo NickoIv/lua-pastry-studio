@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 import { deleteUploadedImage, UPLOAD_ROOT } from "../src/media";
 import { app, resetDatabase, SEED } from "./helpers";
 
@@ -19,12 +20,30 @@ function pngBuffer(): Buffer {
   );
 }
 
+/**
+ * Real, sharp-decodable tiny fixtures — every upload now goes through
+ * optimizeImage() (packages/server/src/media.ts), which actually
+ * decodes the buffer, so a fixture only needs to *sniff* as JPEG/WEBP
+ * (packages/server/src/media.ts#sniffImageType checks magic numbers
+ * only) is no longer enough; it must also be a real, valid image.
+ */
+function jpegBuffer(): Promise<Buffer> {
+  return sharp({ create: { width: 4, height: 4, channels: 3, background: { r: 200, g: 50, b: 50 } } })
+    .jpeg()
+    .toBuffer();
+}
+function webpBuffer(): Promise<Buffer> {
+  return sharp({ create: { width: 4, height: 4, channels: 3, background: { r: 50, g: 50, b: 200 } } })
+    .webp()
+    .toBuffer();
+}
+
 describe("Admin media upload", () => {
   beforeAll(() => {
     resetDatabase();
   });
 
-  it("ADMIN can upload a valid PNG and it's servable", async () => {
+  it("ADMIN can upload a valid PNG — it's optimized to WebP and servable", async () => {
     const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
     const res = await request(app)
       .post("/api/admin/media")
@@ -32,39 +51,53 @@ describe("Admin media upload", () => {
       .field("kind", "product")
       .attach("file", pngBuffer(), { filename: "test.png", contentType: "image/png" });
     expect(res.status).toBe(201);
-    expect(res.body.mimeType).toBe("image/png");
-    expect(res.body.url).toMatch(/^\/media\/product\/.+\.png$/);
+    // Every upload is normalized to WebP regardless of input format —
+    // see packages/server/src/media.ts#optimizeImage.
+    expect(res.body.mimeType).toBe("image/webp");
+    expect(res.body.originalMimeType).toBe("image/png");
+    expect(res.body.url).toMatch(/^\/media\/product\/.+\.webp$/);
 
     const served = await request(app).get(res.body.url);
     expect(served.status).toBe(200);
-    expect(served.headers["content-type"]).toContain("image/png");
+    expect(served.headers["content-type"]).toContain("image/webp");
   });
 
-  it("ADMIN can upload a valid JPEG and WEBP too", async () => {
+  it("ADMIN can upload a valid JPEG and WEBP too — both optimized the same way", async () => {
     const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
-    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(20, 0)]);
     const jpegRes = await request(app)
       .post("/api/admin/media")
       .set("Authorization", `Bearer ${adminToken}`)
       .field("kind", "product")
-      .attach("file", jpeg, { filename: "test.jpg", contentType: "image/jpeg" });
+      .attach("file", await jpegBuffer(), { filename: "test.jpg", contentType: "image/jpeg" });
     expect(jpegRes.status).toBe(201);
-    expect(jpegRes.body.mimeType).toBe("image/jpeg");
+    expect(jpegRes.body.mimeType).toBe("image/webp");
+    expect(jpegRes.body.originalMimeType).toBe("image/jpeg");
 
-    const webp = Buffer.concat([
-      Buffer.from("RIFF", "ascii"),
-      Buffer.from([0, 0, 0, 0]),
-      Buffer.from("WEBPVP8 ", "ascii"),
-      Buffer.alloc(20, 0),
-    ]);
     const webpRes = await request(app)
       .post("/api/admin/media")
       .set("Authorization", `Bearer ${adminToken}`)
       .field("kind", "collection")
-      .attach("file", webp, { filename: "test.webp", contentType: "image/webp" });
+      .attach("file", await webpBuffer(), { filename: "test.webp", contentType: "image/webp" });
     expect(webpRes.status).toBe(201);
     expect(webpRes.body.mimeType).toBe("image/webp");
+    expect(webpRes.body.originalMimeType).toBe("image/webp");
     expect(webpRes.body.url).toMatch(/^\/media\/collection\//);
+  });
+
+  it("a large photo is resized so its longest edge never exceeds the web maximum", async () => {
+    const adminToken = await loginStaff(SEED.adminEmail, SEED.adminPassword);
+    const huge = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: { r: 10, g: 10, b: 10 } } })
+      .jpeg()
+      .toBuffer();
+    const res = await request(app)
+      .post("/api/admin/media")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .field("kind", "product")
+      .attach("file", huge, { filename: "huge.jpg", contentType: "image/jpeg" });
+    expect(res.status).toBe(201);
+    expect(res.body.width).toBeLessThanOrEqual(1800);
+    expect(res.body.height).toBeLessThanOrEqual(1800);
+    expect(res.body.originalSizeBytes).toBeGreaterThan(0);
   });
 
   it("BARISTA is forbidden from uploading media", async () => {
@@ -109,7 +142,7 @@ describe("Admin media upload", () => {
     expect(res.status).toBe(201);
     // The client's filename is never used to build the stored path —
     // the response URL is always a server-generated UUID under /media/<kind>/.
-    expect(res.body.url).toMatch(/^\/media\/product\/[0-9a-f-]+\.png$/);
+    expect(res.body.url).toMatch(/^\/media\/product\/[0-9a-f-]+\.webp$/);
     expect(res.body.url).not.toContain("..");
     expect(res.body.url).not.toContain("etc/passwd");
   });

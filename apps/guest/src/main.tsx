@@ -6,6 +6,14 @@ import { App } from "./App";
 import { BackendProvider } from "./backend/BackendContext";
 import { SessionProvider } from "./session/SessionProvider";
 import { ErrorBoundary } from "./shell/ErrorBoundary";
+import { registerServiceWorker } from "./push";
+
+// Registered eagerly (not only when the guest opens Notifications) so
+// a push subscription can be created without an extra round trip, and
+// so the manifest's service-worker requirement for installability is
+// satisfied as soon as the app loads. A no-op on browsers without
+// serviceWorker/PushManager support — see src/push.ts.
+void registerServiceWorker();
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("#root element not found");

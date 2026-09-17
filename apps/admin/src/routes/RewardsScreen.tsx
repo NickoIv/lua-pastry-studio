@@ -4,6 +4,7 @@ import { isServerMode, useAdminRewards, useCreateReward, useUpdateReward } from 
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 import { RewardFormModal, type RewardFormValue } from "../components/RewardFormModal";
+import { TableRowActions } from "../components/RowActionsMenu";
 
 interface RewardRow {
   id: string;
@@ -43,39 +44,39 @@ export function RewardsScreen() {
       key: "actions",
       header: "",
       render: (r) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              setModal({
-                open: true,
-                value: {
-                  id: r.id,
-                  titleRu: r.title.ru ?? "",
-                  titleKk: r.title.kk ?? "",
-                  titleEn: r.title.en ?? "",
-                  descriptionRu: r.description?.ru ?? "",
-                  pointsCost: r.pointsCost,
-                  active: r.isActive,
-                  perCustomerLimit: r.perCustomerLimit,
-                  perCustomerLimitWindowDays: r.perCustomerLimitWindowDays,
-                  stock: r.stock,
-                },
-              })
-            }
-          >
-            Изменить
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              await updateReward(r.id, { active: !r.isActive });
-              rewards.refresh();
-            }}
-          >
-            {r.isActive ? "Выключить" : "Включить"}
-          </Button>
-        </div>
+        <TableRowActions
+          actions={[
+            {
+              key: "edit",
+              label: "Изменить",
+              onClick: () =>
+                setModal({
+                  open: true,
+                  value: {
+                    id: r.id,
+                    titleRu: r.title.ru ?? "",
+                    titleKk: r.title.kk ?? "",
+                    titleEn: r.title.en ?? "",
+                    descriptionRu: r.description?.ru ?? "",
+                    pointsCost: r.pointsCost,
+                    active: r.isActive,
+                    perCustomerLimit: r.perCustomerLimit,
+                    perCustomerLimitWindowDays: r.perCustomerLimitWindowDays,
+                    stock: r.stock,
+                  },
+                }),
+            },
+            {
+              key: "toggle",
+              label: r.isActive ? "Выключить" : "Включить",
+              tone: r.isActive ? "danger" : "default",
+              onClick: async () => {
+                await updateReward(r.id, { active: !r.isActive });
+                rewards.refresh();
+              },
+            },
+          ]}
+        />
       ),
     },
   ];

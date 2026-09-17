@@ -1,9 +1,20 @@
 import { useState } from "react";
-import { Badge, Button, PlusIcon, Skeleton } from "@lua/ui";
-import { isServerMode, useAdminStaff, useCreateStaff, useLocations, useUpdateStaff } from "../data/hooks";
+import { Badge, Button, NumericInput, PlusIcon, Skeleton } from "@lua/ui";
+import {
+  isServerMode,
+  useAdminStaff,
+  useCreateStaff,
+  useLocations,
+  useResetStaffPin,
+  useSetStaffLocations,
+  useUpdateStaff,
+} from "../data/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 import { StaffFormModal, type StaffFormValue } from "../components/StaffFormModal";
+import { TableRowActions } from "../components/RowActionsMenu";
+import { Modal } from "../components/Modal";
+import { FormField } from "../components/FormField";
 
 const ROLE_LABEL: Record<string, string> = {
   BARISTA: "Бариста",
@@ -19,6 +30,8 @@ interface StaffRow {
   displayName: string;
   role: string;
   locationId: string;
+  locationIds: string[];
+  staffCode: string;
   active: boolean;
 }
 
@@ -27,24 +40,55 @@ export function StaffScreen() {
   const locations = useLocations();
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
+  const setStaffLocations = useSetStaffLocations();
+  const resetStaffPin = useResetStaffPin();
   const [modal, setModal] = useState<{ open: boolean; value: StaffFormValue | null }>({
     open: false,
     value: null,
   });
+  const [pinResetId, setPinResetId] = useState<string | null>(null);
+  const [pinResetValue, setPinResetValue] = useState<number | null>(null);
+  const [pinResetError, setPinResetError] = useState<string | null>(null);
+  const [pinResetBusy, setPinResetBusy] = useState(false);
 
-  const locationName = (id: string) =>
-    (locations.status === "success" && locations.data.find((l) => l.id === id)?.name) ||
-    "—";
+  const shortLocationNames = (ids: string[]) => {
+    if (locations.status !== "success") return "—";
+    const names = ids.map((id) => locations.data.find((l) => l.id === id)?.shortName ?? "—");
+    return names.join(", ") || "—";
+  };
+
+  async function handlePinReset() {
+    if (!pinResetId || pinResetValue === null) {
+      setPinResetError("Укажите новый PIN.");
+      return;
+    }
+    const pinStr = String(pinResetValue);
+    if (!/^\d{4,6}$/.test(pinStr)) {
+      setPinResetError("PIN должен состоять из 4–6 цифр.");
+      return;
+    }
+    setPinResetBusy(true);
+    setPinResetError(null);
+    try {
+      await resetStaffPin(pinResetId, pinStr);
+      setPinResetId(null);
+      setPinResetValue(null);
+    } catch {
+      setPinResetError("Не удалось сбросить PIN.");
+    } finally {
+      setPinResetBusy(false);
+    }
+  }
 
   const columns: DataTableColumn<StaffRow>[] = [
     { key: "name", header: "Имя", render: (s) => s.displayName },
-    { key: "email", header: "Email", render: (s) => s.email ?? "—" },
+    { key: "code", header: "Код", render: (s) => s.staffCode },
     {
       key: "role",
       header: "Роль",
       render: (s) => <Badge tone="accent">{ROLE_LABEL[s.role] ?? s.role}</Badge>,
     },
-    { key: "location", header: "Точка", render: (s) => locationName(s.locationId) },
+    { key: "location", header: "Точки", render: (s) => shortLocationNames(s.locationIds) },
     {
       key: "status",
       header: "Статус",
@@ -63,28 +107,44 @@ export function StaffScreen() {
             Защищённая учётная запись
           </span>
         ) : (
-          <div style={{ display: "flex", gap: 8 }}>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setModal({
-                  open: true,
-                  value: { id: s.id, displayName: s.displayName, role: s.role, active: s.active, locationId: s.locationId },
-                })
-              }
-            >
-              Изменить
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                await updateStaff(s.id, { active: !s.active });
-                staffUsers.refresh();
-              }}
-            >
-              {s.active ? "Деактивировать" : "Активировать"}
-            </Button>
-          </div>
+          <TableRowActions
+            actions={[
+              {
+                key: "edit",
+                label: "Изменить",
+                onClick: () =>
+                  setModal({
+                    open: true,
+                    value: {
+                      id: s.id,
+                      displayName: s.displayName,
+                      role: s.role,
+                      active: s.active,
+                      locationId: s.locationId,
+                      locationIds: s.locationIds,
+                    },
+                  }),
+              },
+              {
+                key: "reset-pin",
+                label: "Сбросить PIN",
+                onClick: () => {
+                  setPinResetId(s.id);
+                  setPinResetValue(null);
+                  setPinResetError(null);
+                },
+              },
+              {
+                key: "toggle-active",
+                label: s.active ? "Деактивировать" : "Активировать",
+                tone: s.active ? "danger" : "default",
+                onClick: async () => {
+                  await updateStaff(s.id, { active: !s.active });
+                  staffUsers.refresh();
+                },
+              },
+            ]}
+          />
         ),
     },
   ];
@@ -125,7 +185,36 @@ export function StaffScreen() {
           await updateStaff(id, patch);
           staffUsers.refresh();
         }}
+        onSetLocations={async (id, locationIds, primaryLocationId) => {
+          await setStaffLocations(id, locationIds, primaryLocationId);
+          staffUsers.refresh();
+        }}
       />
+
+      <Modal
+        open={pinResetId !== null}
+        onClose={() => setPinResetId(null)}
+        title="Сбросить PIN-код"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setPinResetId(null)} disabled={pinResetBusy}>
+              Отмена
+            </Button>
+            <Button onClick={() => void handlePinReset()} disabled={pinResetBusy}>
+              {pinResetBusy ? "Сохранение…" : "Сбросить"}
+            </Button>
+          </>
+        }
+      >
+        <FormField label="Новый PIN" htmlFor="reset-pin-input" hint="4–6 цифр">
+          <NumericInput id="reset-pin-input" value={pinResetValue} onChange={setPinResetValue} placeholder="4826" />
+        </FormField>
+        {pinResetError ? (
+          <p className="lua-form-field__error" role="alert">
+            {pinResetError}
+          </p>
+        ) : null}
+      </Modal>
     </div>
   );
 }

@@ -35,6 +35,8 @@ export const SEED = {
   baristaEmail: "aigerim@lua.dev",
   baristaPassword: "LuaStaff123!",
   baristaId: "50000000-0000-0000-0000-000000000001",
+  baristaStaffCode: "AIGERIM",
+  baristaPin: "4821",
   shiftManagerEmail: "yerlan@lua.dev",
   shiftManagerPassword: "LuaStaff123!",
   shiftManagerId: "50000000-0000-0000-0000-000000000002",
@@ -49,6 +51,7 @@ export const SEED = {
   demoOrderId: "80000000-0000-0000-0000-000000000099",
   secondCustomerId: "60000000-0000-0000-0000-000000000002",
   coffeeLocationId: "10000000-0000-0000-0000-000000000001",
+  kokTobeLocationId: "10000000-0000-0000-0000-000000000002",
   coffeeCategoryId: "20000000-0000-0000-0000-000000000001",
   espressoProductId: "30000000-0000-0000-0000-000000000001",
 };

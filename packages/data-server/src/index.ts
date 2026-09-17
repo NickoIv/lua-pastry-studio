@@ -9,6 +9,8 @@ export {
   type RewardInput,
   type StaffCreateInput,
   type StaffUpdateInput,
+  type StaffLocationsInput,
+  type LocationInput,
   type CustomerUpdateInput,
   type AdjustPointsInput,
   type AuditLogQuery,

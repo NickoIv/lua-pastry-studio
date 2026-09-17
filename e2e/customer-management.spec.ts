@@ -28,8 +28,12 @@ test("admin views customer history, edits their name, and applies a manual point
   const reason = `E2E: компенсация за ошибку при заказе ${Date.now()}`;
   const adjustResponsePromise = page.waitForResponse((res) => res.url().includes("/adjust-points"));
   await page.getByRole("button", { name: "Корректировать баллы" }).click();
-  await page.locator("#adjust-delta").fill("500");
+  // "Начислить" is the default direction; fill the plain (non-negative)
+  // magnitude, then the two-step confirm flow (product brief §8).
+  await page.locator("#adjust-amount").fill("500");
   await page.locator("#adjust-reason").fill(reason);
+  await page.getByRole("button", { name: "Далее" }).click();
+  await expect(page.getByText(`Начислить ${newName}`, { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Подтвердить" }).click();
   const adjustResponse = await adjustResponsePromise;
   const { transaction, newBalance, replayed } = await adjustResponse.json();

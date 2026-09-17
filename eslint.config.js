@@ -43,4 +43,12 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  {
+    // The Web Push service worker — runs in its own worker global scope,
+    // not a browser window or Node process.
+    files: ["**/public/sw.js"],
+    languageOptions: {
+      globals: { ...globals.serviceworker },
+    },
+  },
 );

@@ -10,7 +10,7 @@ import {
   assertUploadable,
   deleteUploadedImage,
   MAX_UPLOAD_BYTES,
-  readImageDimensions,
+  optimizeImage,
   saveUploadedImage,
   sniffImageType,
 } from "../media";
@@ -49,6 +49,8 @@ interface MediaAssetRow {
   height: number | null;
   mime_type: string;
   size_bytes: number;
+  original_mime_type: string | null;
+  original_size_bytes: number | null;
   status: string;
   created_at: string;
 }
@@ -63,6 +65,8 @@ function mapMediaAsset(row: MediaAssetRow) {
     height: row.height ?? undefined,
     mimeType: row.mime_type,
     sizeBytes: row.size_bytes,
+    originalMimeType: row.original_mime_type ?? undefined,
+    originalSizeBytes: row.original_size_bytes ?? undefined,
     status: row.status,
     createdAt: row.created_at,
   };
@@ -83,21 +87,25 @@ mediaRouter.post(
     const sniffed = sniffImageType(file.buffer);
     if (!sniffed) throw new AppError("VALIDATION", 422);
 
-    const dimensions = readImageDimensions(file.buffer, sniffed.mimeType);
-    const { relativePath, url } = await saveUploadedImage(file.buffer, kind, sniffed);
+    // Every upload gets normalized to WebP regardless of what came in —
+    // see docs/ARCHITECTURE.md "Media foundation" / product brief §16.
+    const optimized = await optimizeImage(file.buffer);
+    const { relativePath, url } = await saveUploadedImage(optimized.buffer, kind, "webp");
     const staffId = req.session!.sub;
 
     const row = await withRole("app_admin", { staffId }, async (client) => {
       const result = await client.query<MediaAssetRow>(
-        `insert into media_assets (kind, path, url, alt_text, width, height, mime_type, size_bytes, uploaded_by_staff_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *`,
+        `insert into media_assets (kind, path, url, alt_text, width, height, mime_type, size_bytes, original_mime_type, original_size_bytes, uploaded_by_staff_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning *`,
         [
           kind,
           relativePath,
           url,
           altText,
-          dimensions?.width ?? null,
-          dimensions?.height ?? null,
+          optimized.width,
+          optimized.height,
+          "image/webp",
+          optimized.buffer.length,
           sniffed.mimeType,
           file.buffer.length,
           staffId,

@@ -32,6 +32,7 @@ export interface Product {
   isNew: boolean;
   isMustTry: boolean;
   pointsEarnRateOverride?: number;
+  sortOrder: number;
   availability: ProductAvailability[];
 }
 

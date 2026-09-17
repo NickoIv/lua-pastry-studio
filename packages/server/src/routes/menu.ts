@@ -38,18 +38,24 @@ menuRouter.get(
   "/menu/products",
   asyncHandler(async (req, res) => {
     const { role, guards } = sessionRole(req.session);
-    const rows = await queryAs<ProductRow & { in_stock_anywhere: boolean }>(
+    const rows = await queryAs<ProductRow & { in_stock_anywhere: boolean; available_location_ids: string[] }>(
       role,
       guards,
       `select p.*,
-         coalesce(bool_or(pa.in_stock), true) as in_stock_anywhere
+         coalesce(bool_or(pa.in_stock), true) as in_stock_anywhere,
+         coalesce(array_agg(pa.location_id) filter (where pa.in_stock), '{}') as available_location_ids
        from products p
        left join product_availability pa on pa.product_id = p.id
        where p.active
        group by p.id
-       order by p.created_at`,
+       order by p.category_id, p.sort_order`,
     );
-    res.json(rows.map((row) => ({ ...mapProduct(row), inStockAnywhere: row.in_stock_anywhere })));
+    res.json(
+      rows.map((row) => ({
+        ...mapProduct(row, row.available_location_ids),
+        inStockAnywhere: row.in_stock_anywhere,
+      })),
+    );
   }),
 );
 

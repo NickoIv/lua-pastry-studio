@@ -1,0 +1,29 @@
+.lua-install-prompt {
+  margin: var(--lua-space-sm) var(--lua-space-lg);
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  background: var(--lua-color-accent-soft);
+  border-radius: var(--lua-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  flex-wrap: wrap;
+}
+
+.lua-install-prompt__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-install-prompt__subtitle {
+  margin: 2px 0 0;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-install-prompt__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}

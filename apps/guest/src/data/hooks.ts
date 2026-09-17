@@ -9,6 +9,7 @@ import type {
   GuestCategory,
   GuestCollection,
   GuestCustomer,
+  GuestLocation,
   GuestLoyaltyAccount,
   GuestLoyaltyTransaction,
   GuestOrder,
@@ -62,7 +63,13 @@ export function useMenu() {
       ]);
       return {
         categories,
-        products: products.map((p) => ({ ...p, inStockAnywhere: p.inStockAnywhere ?? true })),
+        products: products.map((p) => ({
+          ...p,
+          description: p.description,
+          allergens: p.allergens,
+          inStockAnywhere: p.inStockAnywhere ?? true,
+          availableLocationIds: p.availableLocationIds ?? [],
+        })),
         collections,
       };
     }
@@ -75,11 +82,52 @@ export function useMenu() {
       categories,
       products: products.map((p) => ({
         ...p,
+        description: p.description,
+        allergens: p.allergens,
         inStockAnywhere: p.availability.length === 0 || p.availability.some((a) => a.inStock),
+        availableLocationIds: p.availability.filter((a) => a.inStock).map((a) => a.locationId),
       })),
       collections,
     };
   }, [backend, session]);
+}
+
+export function useProduct(productId: string | undefined) {
+  const menu = useMenu();
+  return {
+    status: menu.status,
+    data: menu.status === "success" ? (menu.data.products.find((p) => p.id === productId) ?? null) : null,
+  } as const;
+}
+
+export function useLocations() {
+  const backend = useBackend();
+  const { session } = useSession();
+  return useAsync<GuestLocation[]>(async () => {
+    if (isServerMode) return session ? apiClient.listLocations() : [];
+    return backend.store.locations.map((l) => ({
+      id: l.id,
+      shortName: l.shortName,
+      address: l.address,
+      openHours: l.openHours,
+      isActive: l.isActive,
+    }));
+  }, [backend, session]);
+}
+
+/** Persists the guest's selected "current coffee shop" — see docs/ARCHITECTURE.md "Guest location selection". */
+export function useSetMyLocation() {
+  const backend = useBackend();
+  return useCallback(
+    async (locationId: string) => {
+      if (isServerMode) {
+        await apiClient.updateMyProfile({ homeLocationId: locationId });
+        return;
+      }
+      await backend.customers.update(CURRENT_CUSTOMER_ID, { homeLocationId: asId(locationId) });
+    },
+    [backend],
+  );
 }
 
 export function useRewards() {
@@ -134,6 +182,42 @@ export function useRequestRedemption() {
     },
     [backend],
   );
+}
+
+// ---- Push notifications (server mode only — no mock-mode backend for this) ----
+
+export function usePushPublicKey() {
+  return useAsync<string | null>(async () => {
+    if (!isServerMode) return null;
+    const { publicKey } = await apiClient.getPushPublicKey();
+    return publicKey;
+  }, []);
+}
+
+export function useNotificationPreferences() {
+  const { session } = useSession();
+  return useAsync(async () => {
+    if (!isServerMode || !session) return { loyalty: true, rewards: true, promotions: false };
+    return apiClient.getNotificationPreferences();
+  }, [session]);
+}
+
+export function useUpdateNotificationPreferences() {
+  return useCallback((patch: Partial<{ loyalty: boolean; rewards: boolean; promotions: boolean }>) => {
+    return apiClient.updateNotificationPreferences(patch);
+  }, []);
+}
+
+export function useSubscribePush() {
+  return useCallback((subscription: { endpoint: string; keys: { p256dh: string; auth: string } }) => {
+    return apiClient.subscribePush(subscription);
+  }, []);
+}
+
+export function useUnsubscribePush() {
+  return useCallback((endpoint: string) => {
+    return apiClient.unsubscribePush(endpoint);
+  }, []);
 }
 
 /** Scenario A: the guest's own rotating identity QR. */

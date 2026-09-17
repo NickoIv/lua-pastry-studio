@@ -93,7 +93,7 @@ pnpm lint         # eslint .
 pnpm format       # prettier --write .
 pnpm test          # vitest run — packages/domain + packages/utils, no DB needed
 pnpm test:server    # starts/migrates/seeds the DB, then packages/server's
-                     # 97 integration tests against the real Postgres
+                     # 115 integration tests against the real Postgres
 pnpm test:all       # both of the above
 pnpm build         # typecheck everything, then vite build the three apps
 pnpm verify        # typecheck + lint + test:all + build — the full gate
@@ -118,7 +118,7 @@ packages/
   server/        Express API: auth, RLS-aware DB access, atomic loyalty
                   operations, the Admin catalog/staff/customer CMS, a
                   local media upload pipeline, an in-memory rate limiter
-                  — packages/server/tests has 97 integration tests.
+                  — packages/server/tests has 115 integration tests.
   ui/            Design system: tokens, base component set, one icon set.
   i18n/          ru/kk/en dictionaries + a React provider/hook.
   utils/         Money formatting, points pluralization, date formatting.

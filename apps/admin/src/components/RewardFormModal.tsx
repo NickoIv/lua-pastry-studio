@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@lua/ui";
+import { Button, NumericInput } from "@lua/ui";
 import { ApiRequestError, type RewardInput } from "@lua/data-server";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { Modal } from "./Modal";
@@ -11,7 +11,7 @@ export interface RewardFormValue {
   titleKk: string;
   titleEn: string;
   descriptionRu: string;
-  pointsCost: number;
+  pointsCost: number | null;
   active: boolean;
   perCustomerLimit: number | null;
   perCustomerLimitWindowDays: number | null;
@@ -51,7 +51,7 @@ export function RewardFormModal({ open, onClose, initial, onSubmit }: RewardForm
       setError("Укажите название на русском.");
       return;
     }
-    if (!Number.isFinite(value.pointsCost) || value.pointsCost <= 0) {
+    if (value.pointsCost === null || value.pointsCost <= 0) {
       setError("Укажите стоимость в баллах больше нуля.");
       return;
     }
@@ -131,38 +131,26 @@ export function RewardFormModal({ open, onClose, initial, onSubmit }: RewardForm
         htmlFor="reward-cost"
         hint="Изменение цены не затрагивает уже созданные (PENDING) обмены — они сохраняют исходную стоимость."
       >
-        <input
+        <NumericInput
           id="reward-cost"
-          type="number"
-          min={1}
           value={value.pointsCost}
-          onChange={(e) => setValue((v) => ({ ...v, pointsCost: Number(e.target.value) }))}
+          onChange={(pointsCost) => setValue((v) => ({ ...v, pointsCost }))}
+          placeholder="500"
         />
       </FormField>
       <div className="lua-form-row">
         <FormField label="Лимит на клиента" htmlFor="reward-limit" hint="Пусто — без ограничений">
-          <input
+          <NumericInput
             id="reward-limit"
-            type="number"
-            min={0}
-            value={value.perCustomerLimit ?? ""}
-            onChange={(e) =>
-              setValue((v) => ({ ...v, perCustomerLimit: e.target.value === "" ? null : Number(e.target.value) }))
-            }
+            value={value.perCustomerLimit}
+            onChange={(perCustomerLimit) => setValue((v) => ({ ...v, perCustomerLimit }))}
           />
         </FormField>
         <FormField label="Окно, дней" htmlFor="reward-window">
-          <input
+          <NumericInput
             id="reward-window"
-            type="number"
-            min={0}
-            value={value.perCustomerLimitWindowDays ?? ""}
-            onChange={(e) =>
-              setValue((v) => ({
-                ...v,
-                perCustomerLimitWindowDays: e.target.value === "" ? null : Number(e.target.value),
-              }))
-            }
+            value={value.perCustomerLimitWindowDays}
+            onChange={(perCustomerLimitWindowDays) => setValue((v) => ({ ...v, perCustomerLimitWindowDays }))}
           />
         </FormField>
       </div>

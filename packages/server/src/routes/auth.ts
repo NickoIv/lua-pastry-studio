@@ -87,6 +87,52 @@ authRouter.post(
   }),
 );
 
+interface PinLoginBody {
+  staffCode?: unknown;
+  pin?: unknown;
+}
+
+// Separate, tighter limiter than email/password login: a 4-6 digit PIN
+// has far less entropy, so brute-forcing it needs to be meaningfully
+// harder per unit time, not just "the same as everything else".
+const pinLoginRateLimit = rateLimit({ name: "login-pin", windowMs: 60_000, max: 8 });
+
+authRouter.post(
+  "/auth/staff/login-pin",
+  pinLoginRateLimit,
+  asyncHandler(async (req, res) => {
+    const body = req.body as PinLoginBody;
+    if (typeof body.staffCode !== "string" || typeof body.pin !== "string" || !body.staffCode || !body.pin) {
+      throw new AppError("VALIDATION", 422);
+    }
+    const result = await pool.query<{
+      id: string;
+      display_name: string;
+      role: string;
+      location_id: string;
+      active: boolean;
+    }>("select * from login_staff_by_code($1, $2)", [body.staffCode, body.pin]);
+    const row = result.rows[0];
+    if (!row || !row.active) throw new AppError("INVALID_CREDENTIALS", 401);
+
+    const token = signSession({
+      kind: "staff",
+      sub: row.id,
+      role: row.role,
+      locationId: row.location_id,
+    });
+    res.json({
+      token,
+      staff: {
+        id: row.id,
+        displayName: row.display_name,
+        role: row.role,
+        locationId: row.location_id,
+      },
+    });
+  }),
+);
+
 authRouter.get(
   "/auth/me",
   attachSession,

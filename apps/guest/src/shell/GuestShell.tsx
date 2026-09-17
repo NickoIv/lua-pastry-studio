@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { BottomNavigation, type BottomNavigationItem } from "@lua/ui";
 import { ClubIcon, HomeIcon, MenuIcon, ProfileIcon, QrIcon } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
+import { InstallPrompt } from "../components/InstallPrompt";
 import "./GuestShell.css";
 
 const TABS = [
@@ -36,6 +37,7 @@ export function GuestShell() {
     <div className="lua-guest-shell">
       <main className="lua-guest-shell__content">
         <Outlet />
+        {location.pathname === "/" ? <InstallPrompt /> : null}
       </main>
       <BottomNavigation items={items} />
     </div>

@@ -14,6 +14,17 @@
   color: var(--lua-color-text-faint);
 }
 
+.lua-settings__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+}
+
+.lua-settings__card-header .lua-settings__card-title {
+  margin-bottom: 0;
+}
+
 .lua-settings__locations {
   display: flex;
   flex-direction: column;

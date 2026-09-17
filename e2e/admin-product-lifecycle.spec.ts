@@ -18,7 +18,7 @@ test("admin creates a product, Guest sees it, admin archives it, Guest stops see
   await adminPage.goto(`${ADMIN_URL}/menu`);
 
   await adminPage.getByRole("button", { name: "Товар" }).click();
-  await adminPage.locator("#prod-name-ru").fill(productName);
+  await adminPage.locator("#prod-name").fill(productName);
   await adminPage.locator("#prod-price").fill("900");
   await adminPage.getByRole("button", { name: "Сохранить" }).click();
   await expect(adminPage.locator("tr", { hasText: productName })).toBeVisible();

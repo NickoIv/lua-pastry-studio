@@ -116,6 +116,30 @@ export function readPassword(value: unknown): string {
   return value;
 }
 
+/** 4–6 digits — short enough for a barista to type fast, rate-limited at login (see rateLimit.ts). */
+export function readPin(value: unknown): string {
+  if (typeof value !== "string" || !/^\d{4,6}$/.test(value)) {
+    throw new AppError("VALIDATION", 422);
+  }
+  return value;
+}
+
+export function readStaffCode(value: unknown): string {
+  const raw = readNonEmptyString(value, "staffCode");
+  if (!/^[a-zA-Z0-9]{3,12}$/.test(raw)) {
+    throw new AppError("VALIDATION", 422);
+  }
+  return raw.toUpperCase();
+}
+
+export function readUuidArray(value: unknown, fieldName: string): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new AppError("VALIDATION", 422);
+  }
+  void fieldName;
+  return value.filter((v): v is string => typeof v === "string" && v.length > 0);
+}
+
 /**
  * A plain `YYYY-MM-DD` string, passed straight through to Postgres's
  * `date` column untouched — never routed through `new Date(...)`, which

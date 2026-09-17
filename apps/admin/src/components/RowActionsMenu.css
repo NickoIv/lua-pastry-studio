@@ -1,0 +1,64 @@
+.lua-row-actions {
+  position: relative;
+  display: inline-flex;
+}
+
+.lua-row-actions__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--lua-space-xs);
+  background: var(--lua-color-surface);
+  border: 1px solid var(--lua-color-border);
+  border-radius: var(--lua-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.lua-row-actions__item {
+  text-align: left;
+  padding: var(--lua-space-sm);
+  border-radius: var(--lua-radius-sm);
+  font-size: var(--lua-text-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--lua-color-text);
+  white-space: nowrap;
+}
+
+.lua-row-actions__item:hover {
+  background: var(--lua-color-surface-alt);
+}
+
+.lua-row-actions__item--danger {
+  color: var(--lua-color-danger);
+}
+
+/* Below 1100px, an inline row of text buttons ("Изменить", "Деактивировать", …)
+   routinely pushes the table wider than the viewport or gets visually
+   crushed — see product brief §2. The dropdown always exists in the DOM;
+   only visibility is toggled, so there's no layout shift on resize. */
+.lua-table-row-actions__inline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.lua-table-row-actions__menu {
+  display: none;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1100px) {
+  .lua-table-row-actions__inline {
+    display: none;
+  }
+  .lua-table-row-actions__menu {
+    display: flex;
+  }
+}

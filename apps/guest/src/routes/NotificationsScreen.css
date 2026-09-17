@@ -1,0 +1,45 @@
+.lua-notifications {
+  padding-bottom: var(--lua-space-xl);
+}
+
+.lua-notifications__status {
+  margin: 0 var(--lua-space-lg) var(--lua-space-md);
+}
+
+.lua-notifications__toggle {
+  margin-top: var(--lua-space-sm);
+  min-height: var(--lua-touch-target);
+  padding: 0 var(--lua-space-md);
+  border-radius: var(--lua-radius-md);
+  border: 1px solid var(--lua-color-accent);
+  background: none;
+  color: var(--lua-color-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lua-notifications__error {
+  margin-top: var(--lua-space-xs);
+  color: var(--lua-color-danger);
+  font-size: var(--lua-text-sm);
+}
+
+.lua-notifications__categories {
+  margin: 0 var(--lua-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-sm);
+}
+
+.lua-notifications__category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lua-space-sm);
+  min-height: var(--lua-touch-target);
+}
+
+.lua-notifications__category-row input {
+  width: 20px;
+  height: 20px;
+}

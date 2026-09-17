@@ -23,6 +23,7 @@ export { EmptyState, type EmptyStateProps } from "./components/EmptyState";
 export { Skeleton, type SkeletonProps } from "./components/Skeleton";
 export { AppHeader, type AppHeaderProps } from "./components/AppHeader";
 export { ImageSurface, type ImageSurfaceProps } from "./components/ImageSurface";
+export { NumericInput, type NumericInputProps } from "./components/NumericInput";
 
 export { BREAKPOINTS, type BreakpointName } from "./tokens/breakpoints";
 

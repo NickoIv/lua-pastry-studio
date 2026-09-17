@@ -11,10 +11,14 @@
 -- elsewhere was renumbered.
 
 -- ---- Locations -----------------------------------------------------------
-insert into locations (id, name, address, city, open_hours, phone, is_active) values
-  ('10000000-0000-0000-0000-000000000001', 'Lua Pastry Studio — Достык', 'пр. Достык, 89', 'Алматы', '08:00–22:00', '+7 727 000 11 22', true),
-  ('10000000-0000-0000-0000-000000000002', 'Lua Pastry Studio — Кок-Тобе', 'ул. Достоевского, 1/1', 'Алматы', '09:00–21:00', '+7 727 000 33 44', true)
-on conflict (id) do update set name = excluded.name, address = excluded.address, is_active = excluded.is_active;
+-- short_name is what Staff/Admin tables and compact Guest UI show;
+-- name (the full "Lua Pastry Studio — …" form) stays available for
+-- detail views. Both are real editable Admin data (Settings →
+-- Локации), these are just the starting values.
+insert into locations (id, name, short_name, address, city, open_hours, phone, sort_order, is_active) values
+  ('10000000-0000-0000-0000-000000000001', 'Lua Pastry Studio — Достык', 'Достык', 'пр. Достык, 89', 'Алматы', '08:00–22:00', '+7 727 000 11 22', 1, true),
+  ('10000000-0000-0000-0000-000000000002', 'Lua Pastry Studio — Кок-Тобе', 'Кок-Тобе', 'ул. Достоевского, 1/1', 'Алматы', '09:00–21:00', '+7 727 000 33 44', 2, true)
+on conflict (id) do update set name = excluded.name, short_name = excluded.short_name, address = excluded.address, sort_order = excluded.sort_order, is_active = excluded.is_active;
 
 -- ---- Categories ------------------------------------------------------------
 insert into product_categories (id, name, slug, sort_order, active) values
@@ -53,6 +57,23 @@ insert into products (id, category_id, name, description, price_minor_units, all
   ('30000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000005', '{"ru":"Глинтвейн безалкогольный","kk":"Алкогольсіз глинтвейн","en":"Non-alcoholic mulled fruit drink"}', '{"ru":"Яблоко, апельсин и пряности, подаётся тёплым."}', 210000, '{}', true, false, false, true)
 on conflict (id) do update set name = excluded.name, price_minor_units = excluded.price_minor_units, active = excluded.active;
 
+-- Explicit within-category display order (Admin → Меню → drag/reorder
+-- controls edit this going forward) — kept as a separate update rather
+-- than a column on the insert above so the product list stays readable.
+update products set sort_order = v.sort_order from (values
+  ('30000000-0000-0000-0000-000000000001'::uuid, 1), ('30000000-0000-0000-0000-000000000002'::uuid, 2),
+  ('30000000-0000-0000-0000-000000000003'::uuid, 3), ('30000000-0000-0000-0000-000000000009'::uuid, 4),
+  ('30000000-0000-0000-0000-000000000010'::uuid, 1), ('30000000-0000-0000-0000-000000000011'::uuid, 2),
+  ('30000000-0000-0000-0000-000000000004'::uuid, 1), ('30000000-0000-0000-0000-000000000005'::uuid, 2),
+  ('30000000-0000-0000-0000-000000000012'::uuid, 3), ('30000000-0000-0000-0000-000000000013'::uuid, 4),
+  ('30000000-0000-0000-0000-000000000006'::uuid, 1), ('30000000-0000-0000-0000-000000000007'::uuid, 2),
+  ('30000000-0000-0000-0000-000000000014'::uuid, 3), ('30000000-0000-0000-0000-000000000008'::uuid, 4),
+  ('30000000-0000-0000-0000-000000000015'::uuid, 5), ('30000000-0000-0000-0000-000000000016'::uuid, 6),
+  ('30000000-0000-0000-0000-000000000017'::uuid, 7),
+  ('30000000-0000-0000-0000-000000000018'::uuid, 1), ('30000000-0000-0000-0000-000000000019'::uuid, 2)
+) as v(id, sort_order)
+where products.id = v.id;
+
 insert into product_availability (product_id, location_id, in_stock, daily_limit)
 select p.id, l.id, true, null
 from products p cross join locations l
@@ -89,16 +110,34 @@ insert into rewards (id, title, linked_product_id, points_cost, is_active, per_c
 on conflict (id) do update set points_cost = excluded.points_cost, is_active = excluded.is_active;
 
 -- ---- Demo staff accounts (LOCAL DEV ONLY — see docs/LOCAL-BACKEND.md) --
-insert into staff_profiles (id, email, password_hash, display_name, role, location_id, active) values
-  ('50000000-0000-0000-0000-000000000001', 'aigerim@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Айгерим', 'BARISTA', '10000000-0000-0000-0000-000000000001', true),
-  ('50000000-0000-0000-0000-000000000002', 'yerlan@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Ерлан', 'SHIFT_MANAGER', '10000000-0000-0000-0000-000000000001', true),
-  ('50000000-0000-0000-0000-000000000003', 'dana@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Дана', 'ADMIN', '10000000-0000-0000-0000-000000000001', true),
+-- Every demo account keeps working with email+password exactly as
+-- before (existing integration tests and docs rely on it) AND now also
+-- has a staff-code + PIN (021_staff_pin_auth.sql) — the simplified
+-- flow a brand-new employee created from Admin would actually use,
+-- with no individual work email required. Both methods work for the
+-- same row; see the staff_profiles_has_login_method check constraint.
+-- Айгерим works both locations; Ерлан is Достык-only — one example of
+-- each multi-/single-location staff member, per the product brief.
+insert into staff_profiles (id, email, password_hash, display_name, role, location_id, staff_code, pin_hash, active) values
+  ('50000000-0000-0000-0000-000000000001', 'aigerim@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Айгерим', 'BARISTA', '10000000-0000-0000-0000-000000000001', 'AIGERIM', crypt('4821', gen_salt('bf', 10)), true),
+  ('50000000-0000-0000-0000-000000000002', 'yerlan@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Ерлан', 'SHIFT_MANAGER', '10000000-0000-0000-0000-000000000001', 'YERLAN', crypt('1932', gen_salt('bf', 10)), true),
+  ('50000000-0000-0000-0000-000000000003', 'dana@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Дана', 'ADMIN', '10000000-0000-0000-0000-000000000001', 'DANA01', crypt('5310', gen_salt('bf', 10)), true),
   -- The one seeded OWNER — see docs/ARCHITECTURE.md "Staff management &
   -- OWNER protection". No Admin-UI path can create, promote to, demote,
   -- deactivate, or otherwise touch this row; a future owner-handover
   -- flow is a deliberately separate, more heavily-guarded feature.
-  ('50000000-0000-0000-0000-000000000004', 'marat@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Марат', 'OWNER', '10000000-0000-0000-0000-000000000001', true)
-on conflict (id) do update set display_name = excluded.display_name, role = excluded.role;
+  ('50000000-0000-0000-0000-000000000004', 'marat@lua.dev', crypt('LuaStaff123!', gen_salt('bf', 10)), 'Марат', 'OWNER', '10000000-0000-0000-0000-000000000001', 'MARAT01', null, true)
+on conflict (id) do update set display_name = excluded.display_name, role = excluded.role, staff_code = excluded.staff_code, pin_hash = excluded.pin_hash, email = excluded.email, password_hash = excluded.password_hash;
+
+insert into staff_locations (staff_id, location_id) values
+  ('50000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001'),
+  ('50000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002'),
+  ('50000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001'),
+  ('50000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001'),
+  ('50000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002'),
+  ('50000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001'),
+  ('50000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000002')
+on conflict do nothing;
 
 -- ---- Demo guest accounts (LOCAL DEV ONLY) --------------------------------
 -- created_at is set explicitly (not left to default now()) so "В клубе
@@ -122,11 +161,11 @@ on conflict (idempotency_key) do nothing;
 -- Historical completed orders (already earned) for Николай, seeded
 -- directly as COMPLETED so Guest Order History has real history beyond
 -- the live demo order below.
-insert into orders (id, customer_id, location_id, staff_user_id, subtotal_minor_units, total_minor_units, status, points_earned, created_at, completed_at) values
-  ('80000000-0000-0000-0000-000000000001', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 530000, 530000, 'COMPLETED', 265, '2026-03-20T05:12:00Z', '2026-03-20T05:15:00Z'),
-  ('80000000-0000-0000-0000-000000000002', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 680000, 680000, 'COMPLETED', 340, '2026-05-30T12:40:00Z', '2026-05-30T12:43:00Z'),
-  ('80000000-0000-0000-0000-000000000003', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000002', 850000, 850000, 'COMPLETED', 425, '2026-08-10T07:05:00Z', '2026-08-10T07:08:00Z')
-on conflict (id) do update set status = excluded.status;
+insert into orders (id, external_order_code, customer_id, location_id, staff_user_id, subtotal_minor_units, total_minor_units, status, points_earned, created_at, completed_at) values
+  ('80000000-0000-0000-0000-000000000001', 'LUA-0320', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 530000, 530000, 'COMPLETED', 265, '2026-03-20T05:12:00Z', '2026-03-20T05:15:00Z'),
+  ('80000000-0000-0000-0000-000000000002', 'LUA-0530', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 680000, 680000, 'COMPLETED', 340, '2026-05-30T12:40:00Z', '2026-05-30T12:43:00Z'),
+  ('80000000-0000-0000-0000-000000000003', 'LUA-0810', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000002', 850000, 850000, 'COMPLETED', 425, '2026-08-10T07:05:00Z', '2026-08-10T07:08:00Z')
+on conflict (id) do update set status = excluded.status, external_order_code = excluded.external_order_code;
 
 insert into order_items (order_id, product_id, product_name, quantity, unit_price_minor_units, line_total_minor_units) values
   ('80000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000003', 'Латте', 1, 210000, 210000),
@@ -140,9 +179,9 @@ insert into order_items (order_id, product_id, product_name, quantity, unit_pric
 on conflict do nothing;
 
 insert into loyalty_transactions (customer_id, type, points, order_id, reason, created_at, idempotency_key) values
-  ('60000000-0000-0000-0000-000000000001', 'earn', 265, '80000000-0000-0000-0000-000000000001', 'Покупка 80000000-0000-0000-0000-000000000001', '2026-03-20T05:15:00Z', 'earn:80000000-0000-0000-0000-000000000001'),
-  ('60000000-0000-0000-0000-000000000001', 'earn', 340, '80000000-0000-0000-0000-000000000002', 'Покупка 80000000-0000-0000-0000-000000000002', '2026-05-30T12:43:00Z', 'earn:80000000-0000-0000-0000-000000000002'),
-  ('60000000-0000-0000-0000-000000000001', 'earn', 425, '80000000-0000-0000-0000-000000000003', 'Покупка 80000000-0000-0000-0000-000000000003', '2026-08-10T07:08:00Z', 'earn:80000000-0000-0000-0000-000000000003')
+  ('60000000-0000-0000-0000-000000000001', 'earn', 265, '80000000-0000-0000-0000-000000000001', 'Заказ LUA-0320', '2026-03-20T05:15:00Z', 'earn:80000000-0000-0000-0000-000000000001'),
+  ('60000000-0000-0000-0000-000000000001', 'earn', 340, '80000000-0000-0000-0000-000000000002', 'Заказ LUA-0530', '2026-05-30T12:43:00Z', 'earn:80000000-0000-0000-0000-000000000002'),
+  ('60000000-0000-0000-0000-000000000001', 'earn', 425, '80000000-0000-0000-0000-000000000003', 'Заказ LUA-0810', '2026-08-10T07:08:00Z', 'earn:80000000-0000-0000-0000-000000000003')
 on conflict (idempotency_key) do nothing;
 
 -- A past reward redemption, already fulfilled, for Guest history depth.
@@ -160,9 +199,9 @@ update reward_redemptions set loyalty_transaction_id = (
 
 -- The Sep-14 example order from the product brief (8 100 ₸ → +405) —
 -- also seeded as already COMPLETED so it shows in history immediately.
-insert into orders (id, customer_id, location_id, staff_user_id, subtotal_minor_units, total_minor_units, status, points_earned, created_at, completed_at) values
-  ('80000000-0000-0000-0000-000000000004', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 810000, 810000, 'COMPLETED', 405, '2026-09-14T11:42:00Z', '2026-09-14T11:45:00Z')
-on conflict (id) do update set status = excluded.status;
+insert into orders (id, external_order_code, customer_id, location_id, staff_user_id, subtotal_minor_units, total_minor_units, status, points_earned, created_at, completed_at) values
+  ('80000000-0000-0000-0000-000000000004', 'LUA-0914', '60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 810000, 810000, 'COMPLETED', 405, '2026-09-14T11:42:00Z', '2026-09-14T11:45:00Z')
+on conflict (id) do update set status = excluded.status, external_order_code = excluded.external_order_code;
 
 insert into order_items (order_id, product_id, product_name, quantity, unit_price_minor_units, line_total_minor_units) values
   ('80000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000002', 'Капучино', 1, 190000, 190000),
@@ -171,7 +210,7 @@ insert into order_items (order_id, product_id, product_name, quantity, unit_pric
 on conflict do nothing;
 
 insert into loyalty_transactions (customer_id, type, points, order_id, reason, created_at, idempotency_key) values
-  ('60000000-0000-0000-0000-000000000001', 'earn', 405, '80000000-0000-0000-0000-000000000004', 'Покупка 80000000-0000-0000-0000-000000000004', '2026-09-14T11:45:00Z', 'earn:80000000-0000-0000-0000-000000000004')
+  ('60000000-0000-0000-0000-000000000001', 'earn', 405, '80000000-0000-0000-0000-000000000004', 'Заказ LUA-0914', '2026-09-14T11:45:00Z', 'earn:80000000-0000-0000-0000-000000000004')
 on conflict (idempotency_key) do nothing;
 
 -- ---- Live demo order for the Scenario-A smoke test/E2E (LUA-1001) -----

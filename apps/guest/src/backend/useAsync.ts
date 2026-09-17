@@ -9,10 +9,14 @@ export type AsyncState<T> =
  * Minimal data-fetching hook — deliberately not a caching library. The
  * mock repositories resolve instantly, but every screen still goes
  * through loading/error states so swapping in a real network backend
- * later doesn't require rewriting any screen.
+ * later doesn't require rewriting any screen. `refresh()` bumps an
+ * internal nonce to force a re-fetch without needing a real dependency
+ * change — mirrors apps/admin/src/data/useAsync.ts's same shape, used
+ * e.g. after selecting a new "current location" in the profile.
  */
-export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncState<T> {
+export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncState<T> & { refresh: () => void } {
   const [state, setState] = useState<AsyncState<T>>({ status: "loading" });
+  const [nonce, setNonce] = useState(0);
   const loaderRef = useRef(loader);
   useEffect(() => {
     loaderRef.current = loader;
@@ -42,7 +46,7 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncSta
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, nonce]);
 
-  return state;
+  return { ...state, refresh: () => setNonce((n) => n + 1) };
 }

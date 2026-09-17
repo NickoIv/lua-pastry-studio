@@ -588,11 +588,75 @@ dev behavior rather than one wildcard doing double duty for both.
 See `docs/TEST-LUA-LOCALLY.md` for the non-developer walkthrough this
 launcher exists to support.
 
+## 10c. Locations, staff multi-location & simplified staff accounts
+
+Owner manual testing found three related gaps: location names were
+effectively hardcoded seed values, one staff member could only ever be
+assigned to one location, and creating a new employee required a real
+work email/password. All three share one migration sequence
+(`infra/db/migrations/020_locations_and_staff_multi_location.sql`,
+`021_staff_pin_auth.sql`):
+
+- **Locations are real Admin data.** `locations` gained `short_name`
+  (what tables/Staff/Guest show — full "Lua Pastry Studio — …" names
+  are detail-view only) and `sort_order`; `admin_create_location`/
+  `admin_update_location` are the only write path (`packages/server/src/routes/locations.ts`,
+  Admin → Настройки). Every screen that shows a location — Staff
+  tables, product availability, Guest's location selector — reads the
+  same row, so a rename propagates everywhere without touching history
+  (orders/redemptions still reference the location by id).
+- **Staff multi-location** is a `staff_locations` junction table, not a
+  second `location_id` column — `staff_profiles.location_id` remains
+  each employee's *primary* location (used in the JWT session claim),
+  `staff_locations` is the additive "which locations can this person
+  work at" set. `admin_set_staff_locations()` replaces the whole set
+  atomically and keeps the primary location valid within it (can't set
+  a primary that isn't also in the allowed set).
+- **Staff code + PIN** is the default new-employee flow instead of
+  email+password: `staff_profiles.email`/`password_hash` are now
+  nullable, `staff_code`/`pin_hash` were added, and a check constraint
+  requires at least one complete login method (email+password OR
+  code+PIN — never neither, and both can coexist). `login_staff_by_code()`
+  mirrors `login_staff()`'s shape exactly. PINs are bcrypt-hashed via
+  Postgres `crypt()`, identically to passwords, and login is rate-limited
+  more tightly than email/password (`packages/server/src/routes/auth.ts`)
+  since a 4–6 digit PIN has far less entropy. `admin_reset_staff_pin()`
+  lets ADMIN/OWNER reset a PIN without ever reading the old one back.
+  OWNER protection (§9d) extends to all of this: `admin_set_staff_locations`
+  and `admin_create_staff_account_v2` both refuse an OWNER role exactly
+  like the original `admin_create_staff_account`.
+
+## 10d. Push notifications
+
+A standards-based Web Push foundation (`push_subscriptions` +
+`notification_preferences` tables, `023_push_notifications.sql`;
+`packages/server/src/push.ts` + `routes/push.ts`; Guest's
+`src/push.ts` + `routes/NotificationsScreen.tsx` + `public/sw.js`) —
+no third-party push provider, no paid SDK. `packages/server/src/env.ts`
+generates a throwaway VAPID keypair when `VAPID_PUBLIC_KEY`/
+`VAPID_PRIVATE_KEY` aren't set, so subscribing works immediately for
+local testing (subscriptions just don't survive a server restart until
+real keys are configured). The Notifications screen distinguishes every
+real browser state — unsupported, iOS-needs-install, permission denied,
+subscribed, unsubscribed — rather than a single generic toggle, and
+iOS specifically gets "add to Home Screen first" guidance instead of a
+dead button, since Web Push on iOS Safari genuinely doesn't work
+pre-installation. Sending a push is implemented (`sendPush()`) but not
+wired to fire automatically on loyalty events yet — deliberately scoped
+as infrastructure, not a marketing-automation engine (see product
+brief's own explicit "do not build a massive automation engine").
+The install prompt (`apps/guest/src/components/InstallPrompt.tsx`) is a
+tasteful, dismissible banner: Android gets the real `beforeinstallprompt`
+flow, iOS (which never fires that event) gets manual "Add to Home
+Screen" instructions, and Guest works fully in the browser whether
+installed or not — installation only unlocks push, never gates the
+rest of the app.
+
 ## 11. Tests
 
-- `packages/domain/tests` (18) + `packages/utils/tests` (8) — pure
-  logic, no I/O, unchanged from the previous milestone.
-- `packages/server/tests` (97) — integration tests against the real
+- `packages/domain/tests` (18) + `packages/utils/tests` (12) — pure
+  logic, no I/O.
+- `packages/server/tests` (115) — integration tests against the real
   local Postgres (`pnpm test:server`): both loyalty scenarios end to
   end over real HTTP, QR expiry/reuse/invalid-token handling, RBAC
   (cross-customer data leakage, role enforcement, unauthenticated
@@ -601,42 +665,56 @@ launcher exists to support.
   logging, reward-price snapshot), the media asset FK (product/collection
   linkage derived from `image_url`, external URLs never linking, safe
   delete blocked-with-names when in use, hard delete when not, path-
-  traversal safety), the rate limiter (blocked at the
-  limit, unaffected for a different customer), the audit log read
-  endpoint (permissions, filtering, pagination), staff management
-  (create/role-change/deactivate, OWNER protection proven both through
-  the API and by calling the DB function directly), customer management
-  (list aggregate correctness, detail, name/birthday edits, the
-  QR-scan DTO staying minimal), manual point adjustments (ledger-row
-  creation, negative-balance guard, idempotent retry, audit trail),
-  media upload (valid formats, oversized/spoofed/path-traversal
-  rejection, RBAC), the dev-mode CORS policy (localhost/private-LAN
-  origins on the three known dev ports allowed, public/arbitrary origins
-  and unexpected ports rejected — `packages/server/src/corsPolicy.ts`,
-  see "Local demo launcher" below), and the health endpoint (reports a
-  real DB connectivity check, never leaks connection strings/secrets) —
-  see `packages/server/tests/*.test.ts`. Each test
-  file truncates and reseeds the database itself
-  (`infra/db/scripts/wipe.sh`), so the suite is safe to re-run without a
-  manual reset.
-- `playwright.config.ts` + `e2e/*.spec.ts` — real Chromium sessions
-  against the real backend (`pnpm e2e`, after `pnpm db:reset` and the
-  four `pnpm dev:*` processes are running): an Admin product-lifecycle
-  flow proven through both the real Admin and Guest UIs, the reward
-  price-change snapshot proven through the real Guest redemption flow
-  plus direct API calls for the confirm step (deliberately not driven
-  through Staff's camera scanner — see `docs/QR-SECURITY.md`), full
-  Customer Detail and Staff management lifecycles through the real UI,
-  a local image upload that Guest's Menu actually renders, and a
-  presentation-smoke spec that captures the 11 screenshots in
-  `artifacts/presentation/` while asserting zero browser console errors
-  across every screen it visits.
+  traversal safety), automatic image optimization (resize cap,
+  original-vs-stored size/mime provenance), the rate limiter (blocked at
+  the limit, unaffected for a different customer), the audit log read
+  endpoint (permissions, filtering, pagination, human-readable
+  `targetLabel` resolution), staff management (create/role-change/
+  deactivate, staff-code+PIN creation and login, multi-location
+  assignment, PIN reset, OWNER protection proven both through the API
+  and by calling the DB functions directly), locations CRUD (create,
+  rename, RBAC), customer management (list aggregate correctness,
+  detail, name/birthday edits, the QR-scan DTO staying minimal — no
+  phone at all now, not even masked), manual point adjustments
+  (ledger-row creation, negative-balance guard, idempotent retry, audit
+  trail with reason), push notifications (VAPID public key, subscribe/
+  update-in-place/unsubscribe, preferences, auth boundaries), media
+  upload (valid formats, oversized/spoofed/path-traversal rejection,
+  RBAC), the dev-mode CORS policy (localhost/private-LAN origins on the
+  three known dev ports allowed, public/arbitrary origins and unexpected
+  ports rejected — `packages/server/src/corsPolicy.ts`, see "Local demo
+  launcher" below), and the health endpoint (reports a real DB
+  connectivity check, never leaks connection strings/secrets) — see
+  `packages/server/tests/*.test.ts`. Each test file truncates and
+  reseeds the database itself (`infra/db/scripts/wipe.sh`), so the suite
+  is safe to re-run without a manual reset.
+- `playwright.config.ts` + `e2e/*.spec.ts` (14 tests) — real Chromium
+  sessions against the real backend (`pnpm e2e`, after `pnpm db:reset`
+  and the four `pnpm dev:*` processes are running, or simply
+  `pnpm demo:start`): an Admin product-lifecycle flow proven through
+  both the real Admin and Guest UIs, the reward price-change snapshot
+  proven through the real Guest redemption flow plus direct API calls
+  for the confirm step (deliberately not driven through Staff's camera
+  scanner — see `docs/QR-SECURITY.md`), full Customer Detail and Staff
+  management (staff-code+PIN, multi-location) lifecycles through the
+  real UI, Admin responsiveness (no page-level horizontal overflow at
+  900/1024/1100/1280/1440px, action controls reachable), the Guest
+  product-detail flow and location-selection persistence, the Staff
+  stale-scan-state regression (identity → rescan → reward and the
+  reverse both proven to carry no leftover state — the exact HIGH
+  PRIORITY bug the owner found manually), the reward QR screen's full
+  context, a local image upload that Guest's Menu actually renders, and
+  two presentation-screenshot specs that capture the deliverable screens
+  in `artifacts/presentation*/` while asserting zero browser console
+  errors across every screen visited.
 
 ## 12. Known limitations (honest list)
 
-- **Staff/Admin auth is email/password against demo accounts**, not
-  PIN/badge/SSO for staff or phone-OTP for guests. The `LuaApiClient`
-  boundary is shaped so swapping the verification step later doesn't
+- **Staff can now log in with a staff code + PIN** (§10c above) as the
+  default, no-work-email flow, with email/password kept as an optional
+  secondary method (still what OWNER/ADMIN demo accounts use). Guest
+  auth is still email/password, not phone-OTP — the `LuaApiClient`
+  boundary is shaped so swapping that verification step later doesn't
   touch UI code — see `docs/LOCAL-BACKEND.md` §4.
 - **Rate limiting is in-memory/single-process only** (§9c) and **there's
   no production secrets management** — this server has no deployment
@@ -674,8 +752,27 @@ launcher exists to support.
 - **API error messages are ru-only** (`API_ERROR_MESSAGES_RU`) — the
   typed `ApiErrorCode` vocabulary itself is locale-independent, but a
   `kk`/`en` message map hasn't been written yet.
-- **No offline/service-worker PWA behavior.** Guest ships a web manifest
-  and safe-area-correct layout but no service worker/offline cache.
+- **The service worker (§10d) exists only for Web Push, not offline
+  caching.** Guest ships a real manifest + registered service worker,
+  but there's no offline asset cache — a network-down guest sees the
+  same failure states as before, just now able to receive a push
+  notification while the tab is closed.
+- **`per_customer_limit`/`per_customer_limit_window_days` on a reward
+  are stored and shown in Admin but not enforced anywhere server-side**
+  — a pre-existing gap (predates this session), not something the PIN
+  auth/multi-location/push work touched or fixed.
+- **Local Web Push uses an ephemeral VAPID keypair when none is
+  configured** (`packages/server/src/env.ts`) so subscribing works out
+  of the box for testing, but a subscription doesn't survive a server
+  restart unless real `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` values are
+  set in `packages/server/.env`. iOS Safari additionally only supports
+  Web Push for a Home-Screen-installed PWA over a secure origin — real
+  end-to-end iPhone push needs HTTPS/production, not local LAN HTTP;
+  see §10d.
+- **Product reordering is explicit "move up/down" (§13), not
+  drag-and-drop** — a deliberate, brief-sanctioned simpler alternative
+  that edits the same `products.sort_order` column a drag-and-drop UI
+  would.
 - **The Playwright E2E smoke run is a script, not a committed automated
   test** — it lives outside the repo (run manually against a live local
   stack) rather than as a `pnpm test:e2e` CI-style suite, since it needs

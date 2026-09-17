@@ -1,0 +1,62 @@
+.lua-product-detail__image {
+  padding: 0 var(--lua-space-lg);
+}
+
+.lua-product-detail__body {
+  padding: var(--lua-space-md) var(--lua-space-lg) var(--lua-space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lua-space-sm);
+}
+
+.lua-product-detail__badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lua-product-detail__name {
+  margin: 0;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-xl);
+}
+
+.lua-product-detail__price {
+  margin: 0;
+  font-size: var(--lua-text-lg);
+  font-weight: 600;
+  color: var(--lua-color-text-muted);
+}
+
+.lua-product-detail__description {
+  margin: var(--lua-space-xs) 0 0;
+  font-size: var(--lua-text-sm);
+  line-height: var(--lua-leading-relaxed, 1.5);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-product-detail__section {
+  margin-top: var(--lua-space-sm);
+  padding-top: var(--lua-space-sm);
+  border-top: 1px solid var(--lua-color-border);
+}
+
+.lua-product-detail__section-title {
+  margin: 0 0 6px;
+  font-size: var(--lua-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lua-color-text-faint);
+}
+
+.lua-product-detail__allergens {
+  margin: 0;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-product-detail__notfound {
+  padding: var(--lua-space-xl);
+  text-align: center;
+  color: var(--lua-color-text-muted);
+}

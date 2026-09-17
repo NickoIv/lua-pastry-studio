@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { asId } from "@lua/types";
+import { asId, type Money } from "@lua/types";
 import { APP_CONFIG } from "@lua/config";
 import type { ServerOrder, ServerScanSummary } from "@lua/data-server";
 import { useBackend } from "../backend/useBackend";
@@ -8,6 +8,15 @@ import { useAsync } from "./useAsync";
 import { apiClient } from "./apiClient";
 
 const isServerMode = APP_CONFIG.dataMode === "server";
+
+/** Only for a client-side earn preview before confirming (product brief §27) — the actual points awarded always come from the server's own confirm_order_earn response. */
+export function useLoyaltyProgram() {
+  const backend = useBackend();
+  return useAsync(async () => {
+    if (isServerMode) return apiClient.getLoyaltyProgram();
+    return backend.store.loyaltyProgram;
+  }, [backend]);
+}
 
 export function useLocations() {
   const backend = useBackend();
@@ -21,7 +30,7 @@ export interface OpenOrderView {
   id: string;
   externalOrderCode?: string;
   items: Array<{ productName: string; quantity: number }>;
-  total: { currency: string; minorUnits: number };
+  total: Money;
 }
 
 /** Orders a Staff device can attach after resolving an identity QR (Scenario A). */
@@ -88,7 +97,6 @@ export function useResolveQrToken() {
           customer: {
             id: customer.id,
             displayName: customer.displayName,
-            maskedPhone: customer.maskedPhone,
             balance: account.pointsBalance,
           },
         };
@@ -104,7 +112,6 @@ export function useResolveQrToken() {
         customer: {
           id: customer.id,
           displayName: customer.displayName,
-          maskedPhone: customer.maskedPhone,
           balance: account.pointsBalance,
         },
         redemption:

@@ -181,7 +181,7 @@ adminCatalogRouter.get(
     const rows = await queryAs<ProductRow & { active: boolean }>(
       "app_admin",
       { staffId: req.session!.sub },
-      "select * from products order by created_at",
+      "select * from products order by category_id, sort_order",
     );
     res.json(rows.map((r) => ({ ...mapProduct(r), active: r.active })));
   }),
@@ -198,6 +198,7 @@ interface ProductBody {
   isMustTry?: unknown;
   active?: unknown;
   imageUrl?: unknown;
+  sortOrder?: unknown;
 }
 
 adminCatalogRouter.post(
@@ -215,9 +216,18 @@ adminCatalogRouter.post(
     const row = await withRole("app_admin", { staffId }, async (client) => {
       const imageUrl = typeof body.imageUrl === "string" && body.imageUrl ? body.imageUrl : null;
       const mediaAssetId = await resolveMediaAssetId(client, "product", imageUrl);
+      const nextSortOrder =
+        body.sortOrder !== undefined
+          ? (readOptionalPositiveInt(body.sortOrder) ?? 0)
+          : await client
+              .query<{ next: number }>(
+                "select coalesce(max(sort_order), -1) + 1 as next from products where category_id = $1",
+                [categoryId],
+              )
+              .then((r) => r.rows[0]!.next);
       const result = await client.query<ProductRow & { active: boolean }>(
-        `insert into products (category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try, active, image_url, media_asset_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning *`,
+        `insert into products (category_id, name, description, price_minor_units, allergens, is_seasonal, is_new, is_must_try, active, image_url, media_asset_id, sort_order)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) returning *`,
         [
           categoryId,
           JSON.stringify(name),
@@ -230,6 +240,7 @@ adminCatalogRouter.post(
           readBoolean(body.active, true),
           imageUrl,
           mediaAssetId,
+          nextSortOrder,
         ],
       );
       const created = result.rows[0]!;
@@ -282,6 +293,7 @@ adminCatalogRouter.patch(
       const active = body.active !== undefined ? readBoolean(body.active) : null;
       const imageUrl = body.imageUrl !== undefined ? (body.imageUrl as string | null) : undefined;
       const mediaAssetId = imageUrl !== undefined ? await resolveMediaAssetId(client, "product", imageUrl) : null;
+      const sortOrder = body.sortOrder !== undefined ? readOptionalPositiveInt(body.sortOrder) : null;
 
       const result = await client.query<ProductRow & { active: boolean }>(
         `update products set
@@ -296,8 +308,9 @@ adminCatalogRouter.patch(
            active = coalesce($9, active),
            image_url = case when $10 then $11 else image_url end,
            media_asset_id = case when $10 then $12 else media_asset_id end,
+           sort_order = coalesce($13, sort_order),
            updated_at = now()
-         where id = $13
+         where id = $14
          returning *`,
         [
           categoryId,
@@ -312,6 +325,7 @@ adminCatalogRouter.patch(
           imageUrl !== undefined,
           imageUrl ?? null,
           mediaAssetId,
+          sortOrder,
           req.params.id,
         ],
       );
@@ -329,6 +343,46 @@ adminCatalogRouter.patch(
     });
 
     res.json({ ...mapProduct(row), active: row.active });
+  }),
+);
+
+interface MoveBody {
+  direction?: unknown;
+}
+
+/**
+ * Swaps this product's sort_order with its neighbor within the same
+ * category — the "convenient controls" alternative to drag-and-drop
+ * the product brief explicitly allows (§13). Atomic (one transaction),
+ * so two admins clicking at once can't leave two products with the
+ * same sort_order.
+ */
+adminCatalogRouter.post(
+  "/admin/products/:id/move",
+  adminOnly,
+  asyncHandler(async (req, res) => {
+    const body = req.body as MoveBody;
+    if (body.direction !== "up" && body.direction !== "down") throw new AppError("VALIDATION", 422);
+    const staffId = req.session!.sub;
+
+    await withRole("app_admin", { staffId }, async (client) => {
+      const current = await client.query<ProductRow>("select * from products where id = $1", [req.params.id]);
+      if (current.rowCount === 0) throw new AppError("PRODUCT_NOT_FOUND", 404);
+      const row = current.rows[0]!;
+
+      const neighbor = await client.query<{ id: string; sort_order: number }>(
+        body.direction === "up"
+          ? "select id, sort_order from products where category_id = $1 and sort_order < $2 order by sort_order desc limit 1"
+          : "select id, sort_order from products where category_id = $1 and sort_order > $2 order by sort_order asc limit 1",
+        [row.category_id, row.sort_order],
+      );
+      if (neighbor.rowCount === 0) return; // already at the edge — no-op
+
+      await client.query("update products set sort_order = $1 where id = $2", [neighbor.rows[0]!.sort_order, row.id]);
+      await client.query("update products set sort_order = $1 where id = $2", [row.sort_order, neighbor.rows[0]!.id]);
+    });
+
+    res.status(204).send();
   }),
 );
 

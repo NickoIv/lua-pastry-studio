@@ -79,3 +79,69 @@
   width: 20px;
   height: 20px;
 }
+
+.lua-form-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lua-space-md);
+}
+
+.lua-lang-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--lua-space-md);
+  border-bottom: 1px solid var(--lua-color-border);
+}
+
+.lua-lang-tabs__tab {
+  padding: var(--lua-space-xs) var(--lua-space-sm);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  color: var(--lua-color-text-muted);
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+
+.lua-lang-tabs__tab--active {
+  color: var(--lua-color-accent);
+  border-bottom-color: var(--lua-color-accent);
+}
+
+.lua-allergen-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--lua-space-xs);
+}
+
+.lua-allergen-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--lua-color-border);
+  background: var(--lua-color-surface);
+  font-size: var(--lua-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--lua-color-text-muted);
+}
+
+.lua-allergen-chip--active {
+  background: var(--lua-color-accent);
+  border-color: var(--lua-color-accent);
+  color: var(--lua-color-text-on-accent);
+}
+
+.lua-form-advanced-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 var(--lua-space-md);
+  font-size: var(--lua-text-sm);
+  font-weight: 600;
+  color: var(--lua-color-accent);
+  cursor: pointer;
+  text-align: left;
+}

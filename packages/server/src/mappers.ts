@@ -17,9 +17,10 @@ export interface ProductRow {
   is_seasonal: boolean;
   is_new: boolean;
   is_must_try: boolean;
+  sort_order: number;
 }
 
-export function mapProduct(row: ProductRow) {
+export function mapProduct(row: ProductRow, availableLocationIds: string[] = []) {
   return {
     id: row.id,
     categoryId: row.category_id,
@@ -32,6 +33,8 @@ export function mapProduct(row: ProductRow) {
     isSeasonal: row.is_seasonal,
     isNew: row.is_new,
     isMustTry: row.is_must_try,
+    sortOrder: row.sort_order,
+    availableLocationIds,
     availability: [],
   };
 }
@@ -217,12 +220,14 @@ export function mapRedemption(row: RedemptionRow) {
 export interface LocationRow {
   id: string;
   name: string;
+  short_name: string;
   address: string;
   city: string;
   lat: number | null;
   lng: number | null;
   phone: string | null;
   open_hours: string;
+  sort_order: number;
   is_active: boolean;
 }
 
@@ -230,12 +235,14 @@ export function mapLocation(row: LocationRow) {
   return {
     id: row.id,
     name: row.name,
+    shortName: row.short_name,
     address: row.address,
     city: row.city,
     lat: row.lat ?? undefined,
     lng: row.lng ?? undefined,
     phone: row.phone ?? undefined,
     openHours: row.open_hours,
+    sortOrder: row.sort_order,
     isActive: row.is_active,
   };
 }
@@ -272,21 +279,25 @@ export function mapCustomer(row: CustomerRow) {
 
 export interface StaffRow {
   id: string;
-  email: string;
+  email: string | null;
   display_name: string;
   role: string;
   location_id: string;
+  staff_code: string;
   active: boolean;
   created_at: string;
 }
 
-export function mapStaff(row: StaffRow) {
+/** location_ids defaults to just the primary — callers that join staff_locations pass the real set. */
+export function mapStaff(row: StaffRow, locationIds?: string[]) {
   return {
     id: row.id,
-    email: row.email,
+    email: row.email ?? undefined,
     displayName: row.display_name,
     role: row.role,
     locationId: row.location_id,
+    locationIds: locationIds ?? [row.location_id],
+    staffCode: row.staff_code,
     active: row.active,
     createdAt: row.created_at,
   };

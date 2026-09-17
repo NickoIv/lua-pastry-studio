@@ -28,3 +28,42 @@
   font-weight: 600;
   color: var(--lua-color-text-muted);
 }
+
+.lua-qr-screen__reward-summary {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--lua-space-sm) var(--lua-space-md);
+  background: var(--lua-color-surface-alt);
+  border-radius: var(--lua-radius-lg);
+}
+
+.lua-qr-screen__reward-name {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: var(--lua-text-md);
+}
+
+.lua-qr-screen__reward-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--lua-text-sm);
+  color: var(--lua-color-text-muted);
+}
+
+.lua-qr-screen__reward-row--total {
+  font-weight: 700;
+  color: var(--lua-color-text);
+  border-top: 1px solid var(--lua-color-border);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.lua-qr-screen__notice {
+  margin: 0;
+  max-width: 32ch;
+  font-size: var(--lua-text-xs);
+  color: var(--lua-color-text-faint);
+}

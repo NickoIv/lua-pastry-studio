@@ -17,7 +17,9 @@
     "express": "catalog:",
     "jsonwebtoken": "catalog:",
     "multer": "catalog:",
-    "pg": "catalog:"
+    "pg": "catalog:",
+    "sharp": "catalog:",
+    "web-push": "catalog:"
   },
   "devDependencies": {
     "@types/cors": "catalog:",
@@ -27,6 +29,7 @@
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "@types/supertest": "catalog:",
+    "@types/web-push": "catalog:",
     "supertest": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

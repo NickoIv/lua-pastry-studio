@@ -107,8 +107,19 @@
 .lua-club__history-reason {
   color: var(--lua-color-text-muted);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.lua-club__reward-shortage {
+  flex-shrink: 0;
+  font-size: var(--lua-text-xs);
+  font-weight: 600;
+  color: var(--lua-color-text-faint);
+  text-align: right;
+  max-width: 110px;
 }
 
 .lua-club__history-points {

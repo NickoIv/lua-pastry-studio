@@ -8,6 +8,7 @@ import {
   useDeleteCollection,
   useUpdateCollection,
 } from "../data/hooks";
+import { TableRowActions } from "../components/RowActionsMenu";
 import { PageHeader } from "../components/PageHeader";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 import { CollectionFormModal, type CollectionFormValue } from "../components/CollectionFormModal";
@@ -52,39 +53,39 @@ export function CollectionsScreen() {
       key: "actions",
       header: "",
       render: (c) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              setModal({
-                open: true,
-                value: {
-                  id: c.id,
-                  nameRu: c.name.ru ?? "",
-                  nameKk: c.name.kk ?? "",
-                  nameEn: c.name.en ?? "",
-                  subtitleRu: c.subtitle?.ru ?? "",
-                  sortOrder: c.sortOrder ?? 0,
-                  active: c.active ?? true,
-                  featured: c.featured,
-                  productIds: c.productIds,
-                  imageUrl: c.imageUrl ?? "",
-                },
-              })
-            }
-          >
-            Изменить
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              await deleteCollection(c.id);
-              collections.refresh();
-            }}
-          >
-            Удалить
-          </Button>
-        </div>
+        <TableRowActions
+          actions={[
+            {
+              key: "edit",
+              label: "Изменить",
+              onClick: () =>
+                setModal({
+                  open: true,
+                  value: {
+                    id: c.id,
+                    nameRu: c.name.ru ?? "",
+                    nameKk: c.name.kk ?? "",
+                    nameEn: c.name.en ?? "",
+                    subtitleRu: c.subtitle?.ru ?? "",
+                    sortOrder: c.sortOrder ?? 0,
+                    active: c.active ?? true,
+                    featured: c.featured,
+                    productIds: c.productIds,
+                    imageUrl: c.imageUrl ?? "",
+                  },
+                }),
+            },
+            {
+              key: "delete",
+              label: "Удалить",
+              tone: "danger",
+              onClick: async () => {
+                await deleteCollection(c.id);
+                collections.refresh();
+              },
+            },
+          ]}
+        />
       ),
     },
   ];

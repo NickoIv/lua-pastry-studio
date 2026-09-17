@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Button } from "@lua/ui";
+import { Button, NumericInput } from "@lua/ui";
 import { ApiRequestError, type ProductInput, type ServerCategory } from "@lua/data-server";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
 import { ImageUploadField } from "./ImageUploadField";
+import { AllergenInput } from "./AllergenInput";
 
 export interface ProductFormValue {
   id?: string;
@@ -15,8 +16,8 @@ export interface ProductFormValue {
   descriptionRu: string;
   descriptionKk: string;
   descriptionEn: string;
-  price: number;
-  allergens: string;
+  price: number | null;
+  allergens: string[];
   isSeasonal: boolean;
   isNew: boolean;
   isMustTry: boolean;
@@ -41,8 +42,8 @@ function emptyValue(defaultCategoryId: string): ProductFormValue {
     descriptionRu: "",
     descriptionKk: "",
     descriptionEn: "",
-    price: 0,
-    allergens: "",
+    price: null,
+    allergens: [],
     isSeasonal: false,
     isNew: false,
     isMustTry: false,
@@ -51,18 +52,23 @@ function emptyValue(defaultCategoryId: string): ProductFormValue {
   };
 }
 
+type LangTab = "ru" | "kk" | "en";
+const LANG_TAB_LABEL: Record<LangTab, string> = { ru: "Русский", kk: "Қазақша", en: "English" };
+
 export function ProductFormModal({ open, onClose, initial, categories, onSubmit }: ProductFormModalProps) {
   const fallback = emptyValue(categories[0]?.id ?? "");
   const [value, setValue] = useState<ProductFormValue>(initial ?? fallback);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [imageAltText, setImageAltText] = useState("");
+  const [langTab, setLangTab] = useState<LangTab>("ru");
   // Re-seeds when editing a different row, and also when the categories
   // list (loaded async) finally arrives after this modal already
   // mounted with an empty default categoryId — otherwise "new product"
   // can be stuck with an unselectable categoryId of "" forever.
   if (open && (initial?.id !== value.id || (!value.id && !value.categoryId && categories.length > 0))) {
     setValue(initial ?? fallback);
+    setLangTab("ru");
   }
 
   async function handleSubmit() {
@@ -74,7 +80,7 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
       setError("Выберите категорию.");
       return;
     }
-    if (!Number.isFinite(value.price) || value.price <= 0) {
+    if (value.price === null || value.price <= 0) {
       setError("Укажите цену больше нуля.");
       return;
     }
@@ -88,10 +94,7 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
           ? { ru: value.descriptionRu, kk: value.descriptionKk || value.descriptionRu, en: value.descriptionEn || value.descriptionRu }
           : undefined,
         price: value.price,
-        allergens: value.allergens
-          .split(",")
-          .map((a) => a.trim())
-          .filter(Boolean),
+        allergens: value.allergens,
         isSeasonal: value.isSeasonal,
         isNew: value.isNew,
         isMustTry: value.isMustTry,
@@ -105,6 +108,13 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
       setBusy(false);
     }
   }
+
+  const nameField: Record<LangTab, keyof ProductFormValue> = { ru: "nameRu", kk: "nameKk", en: "nameEn" };
+  const descField: Record<LangTab, keyof ProductFormValue> = {
+    ru: "descriptionRu",
+    kk: "descriptionKk",
+    en: "descriptionEn",
+  };
 
   return (
     <Modal
@@ -122,39 +132,43 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
         </>
       }
     >
-      <FormField label="Название (RU)" htmlFor="prod-name-ru">
-        <input
-          id="prod-name-ru"
-          type="text"
-          value={value.nameRu}
-          onChange={(e) => setValue((v) => ({ ...v, nameRu: e.target.value }))}
-        />
-      </FormField>
-      <div className="lua-form-row">
-        <FormField label="Название (KK)" htmlFor="prod-name-kk">
-          <input
-            id="prod-name-kk"
-            type="text"
-            value={value.nameKk}
-            onChange={(e) => setValue((v) => ({ ...v, nameKk: e.target.value }))}
-          />
-        </FormField>
-        <FormField label="Название (EN)" htmlFor="prod-name-en">
-          <input
-            id="prod-name-en"
-            type="text"
-            value={value.nameEn}
-            onChange={(e) => setValue((v) => ({ ...v, nameEn: e.target.value }))}
-          />
-        </FormField>
+      <div className="lua-lang-tabs" role="tablist" aria-label="Язык">
+        {(Object.keys(LANG_TAB_LABEL) as LangTab[]).map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            role="tab"
+            aria-selected={langTab === lang}
+            className={`lua-lang-tabs__tab${langTab === lang ? " lua-lang-tabs__tab--active" : ""}`}
+            onClick={() => setLangTab(lang)}
+          >
+            {LANG_TAB_LABEL[lang]}
+            {lang === "ru" ? " *" : ""}
+          </button>
+        ))}
       </div>
-      <FormField label="Описание (RU)" htmlFor="prod-desc-ru">
-        <textarea
-          id="prod-desc-ru"
-          value={value.descriptionRu}
-          onChange={(e) => setValue((v) => ({ ...v, descriptionRu: e.target.value }))}
+
+      <FormField label={`Название (${LANG_TAB_LABEL[langTab]})`} htmlFor="prod-name">
+        <input
+          id="prod-name"
+          type="text"
+          value={value[nameField[langTab]] as string}
+          onChange={(e) => setValue((v) => ({ ...v, [nameField[langTab]]: e.target.value }))}
         />
       </FormField>
+      <FormField label={`Описание (${LANG_TAB_LABEL[langTab]})`} htmlFor="prod-desc">
+        <textarea
+          id="prod-desc"
+          value={value[descField[langTab]] as string}
+          onChange={(e) => setValue((v) => ({ ...v, [descField[langTab]]: e.target.value }))}
+        />
+      </FormField>
+      {langTab !== "ru" ? (
+        <p className="lua-form-field__hint" style={{ margin: "-8px 0 16px" }}>
+          Пусто — будет показан русский вариант.
+        </p>
+      ) : null}
+
       <div className="lua-form-row">
         <FormField label="Категория" htmlFor="prod-category">
           <select
@@ -170,28 +184,17 @@ export function ProductFormModal({ open, onClose, initial, categories, onSubmit 
           </select>
         </FormField>
         <FormField label="Цена, ₸" htmlFor="prod-price">
-          <input
-            id="prod-price"
-            type="number"
-            min={0}
-            step={50}
-            value={value.price}
-            onChange={(e) => setValue((v) => ({ ...v, price: Number(e.target.value) }))}
-          />
+          <NumericInput id="prod-price" value={value.price} onChange={(price) => setValue((v) => ({ ...v, price }))} placeholder="1900" />
         </FormField>
       </div>
-      <FormField label="Аллергены" htmlFor="prod-allergens" hint="Через запятую, например: молоко, орехи">
-        <input
-          id="prod-allergens"
-          type="text"
-          value={value.allergens}
-          onChange={(e) => setValue((v) => ({ ...v, allergens: e.target.value }))}
-        />
-      </FormField>
+      <AllergenInput
+        value={value.allergens}
+        onChange={(allergens) => setValue((v) => ({ ...v, allergens }))}
+      />
       <ImageUploadField
         kind="product"
         imageUrl={value.imageUrl}
-        altText={imageAltText}
+        altText={imageAltText || value.nameRu}
         onImageUrlChange={(url) => setValue((v) => ({ ...v, imageUrl: url }))}
         onAltTextChange={setImageAltText}
       />

@@ -54,18 +54,18 @@ export function ProfileScreen() {
       </div>
 
       <Card padding="none" className="lua-profile__menu">
-        <div className="lua-profile__row">
+        <button type="button" className="lua-profile__row lua-profile__row--button" onClick={() => navigate("/profile/locations")}>
           <LocationIcon className="lua-profile__row-icon" />
           <span className="lua-profile__row-label">{t("guest.profile.addresses")}</span>
           <ChevronRightIcon className="lua-profile__row-chevron" />
-        </div>
-        <div className="lua-profile__row">
+        </button>
+        <button type="button" className="lua-profile__row lua-profile__row--button" onClick={() => navigate("/profile/notifications")}>
           <BellIcon className="lua-profile__row-icon" />
           <span className="lua-profile__row-label">
             {t("guest.profile.notifications")}
           </span>
           <ChevronRightIcon className="lua-profile__row-chevron" />
-        </div>
+        </button>
         <div className="lua-profile__row">
           <GlobeIcon className="lua-profile__row-icon" />
           <span className="lua-profile__row-label">{t("guest.profile.language")}</span>

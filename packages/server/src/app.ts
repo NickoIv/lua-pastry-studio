@@ -24,6 +24,7 @@ import { adminCustomersRouter } from "./routes/adminCustomers";
 import { adminAuditRouter } from "./routes/adminAudit";
 import { mediaRouter } from "./routes/media";
 import { locationsRouter } from "./routes/locations";
+import { pushRouter } from "./routes/push";
 
 const SERVER_VERSION = "0.1.0"; // keep in sync with packages/server/package.json
 
@@ -69,6 +70,7 @@ export function createApp() {
   app.use("/api", adminAuditRouter);
   app.use("/api", mediaRouter);
   app.use("/api", locationsRouter);
+  app.use("/api", pushRouter);
 
   const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     const appError = mapPostgresError(err);

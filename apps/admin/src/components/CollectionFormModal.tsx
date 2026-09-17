@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Button } from "@lua/ui";
-import { ApiRequestError, type CollectionInput, type ServerProduct } from "@lua/data-server";
-import { API_ERROR_MESSAGES_RU } from "@lua/types";
+import { ApiRequestError, type CollectionInput } from "@lua/data-server";
+import { API_ERROR_MESSAGES_RU, type LocalizedText } from "@lua/types";
 import { Modal } from "./Modal";
 import { FormField } from "./FormField";
 import { ImageUploadField } from "./ImageUploadField";
+
+/** Only what this picker actually renders — accepts either server- or mock-mode product shapes without needing every field both share. */
+export interface CollectionProductOption {
+  id: string;
+  name: LocalizedText;
+}
 
 export interface CollectionFormValue {
   id?: string;
@@ -23,7 +29,7 @@ export interface CollectionFormModalProps {
   open: boolean;
   onClose: () => void;
   initial: CollectionFormValue | null;
-  products: ServerProduct[];
+  products: CollectionProductOption[];
   onSubmit: (input: CollectionInput) => Promise<unknown>;
 }
 

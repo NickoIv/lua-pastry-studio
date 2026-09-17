@@ -33,6 +33,8 @@ export const API_ERROR_CODES = [
   "CUSTOMER_NOT_FOUND",
   "MEDIA_ASSET_IN_USE",
   "MEDIA_ASSET_NOT_FOUND",
+  "LOCATION_NOT_FOUND",
+  "PUSH_NOT_SUPPORTED",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
@@ -72,6 +74,8 @@ export const API_ERROR_MESSAGES_RU: Record<ApiErrorCode, string> = {
   CUSTOMER_NOT_FOUND: "Клиент не найден.",
   MEDIA_ASSET_IN_USE: "Изображение сейчас используется — замените его в этих карточках, чтобы удалить.",
   MEDIA_ASSET_NOT_FOUND: "Изображение не найдено.",
+  LOCATION_NOT_FOUND: "Точка не найдена.",
+  PUSH_NOT_SUPPORTED: "Уведомления не поддерживаются в этом браузере.",
 };
 
 export function isApiErrorCode(value: string): value is ApiErrorCode {

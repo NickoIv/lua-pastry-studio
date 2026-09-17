@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 import { AppError } from "./errors";
 import { env } from "./env";
 
@@ -104,6 +105,34 @@ export function assertUploadable(kind: unknown): MediaKind {
   return kind;
 }
 
+/** A product photo never needs to be bigger than this on the web — see docs/ARCHITECTURE.md "Media foundation". */
+const MAX_DIMENSION_PX = 1800;
+const WEBP_QUALITY = 82;
+
+export interface OptimizedImage {
+  buffer: Buffer;
+  width: number;
+  height: number;
+}
+
+/**
+ * Normalizes orientation (a phone photo's EXIF rotation is baked in,
+ * not left for the browser to guess), caps the longest edge, and
+ * re-encodes as WebP at a quality that stays visually clean while
+ * cutting typical phone-camera JPEGs down to a fraction of their
+ * original size. Runs on every upload — there is no "keep original"
+ * escape hatch, matching the product brief's "do not keep unnecessarily
+ * huge originals" instruction.
+ */
+export async function optimizeImage(buffer: Buffer): Promise<OptimizedImage> {
+  const optimized = await sharp(buffer)
+    .rotate() // auto-orients from EXIF, then strips it — no orientation metadata left to misinterpret
+    .resize({ width: MAX_DIMENSION_PX, height: MAX_DIMENSION_PX, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: WEBP_QUALITY })
+    .toBuffer({ resolveWithObject: true });
+  return { buffer: optimized.data, width: optimized.info.width, height: optimized.info.height };
+}
+
 /**
  * Writes the sniffed-and-validated buffer under a server-generated
  * random filename — the client's original filename is never used to
@@ -113,11 +142,11 @@ export function assertUploadable(kind: unknown): MediaKind {
 export async function saveUploadedImage(
   buffer: Buffer,
   kind: MediaKind,
-  sniffed: SniffedType,
+  extension: string,
 ): Promise<{ relativePath: string; url: string }> {
   const dir = path.join(UPLOAD_ROOT, kind);
   await mkdir(dir, { recursive: true });
-  const filename = `${randomUUID()}.${sniffed.extension}`;
+  const filename = `${randomUUID()}.${extension}`;
   await writeFile(path.join(dir, filename), buffer, { mode: 0o644 });
   const relativePath = path.posix.join(kind, filename);
   return { relativePath, url: `/media/${relativePath}` };

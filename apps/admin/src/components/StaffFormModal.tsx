@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@lua/ui";
+import { Button, NumericInput } from "@lua/ui";
 import { ApiRequestError, type ServerLocation, type StaffCreateInput, type StaffUpdateInput } from "@lua/data-server";
 import { API_ERROR_MESSAGES_RU, ROLES } from "@lua/types";
 
@@ -25,6 +25,7 @@ export interface StaffFormValue {
   role: string;
   active: boolean;
   locationId: string;
+  locationIds: string[];
 }
 
 export interface StaffFormModalProps {
@@ -34,26 +35,63 @@ export interface StaffFormModalProps {
   locations: ServerLocation[];
   onCreate: (input: StaffCreateInput) => Promise<unknown>;
   onUpdate: (id: string, patch: StaffUpdateInput) => Promise<unknown>;
+  onSetLocations: (id: string, locationIds: string[], primaryLocationId: string) => Promise<unknown>;
 }
 
 function emptyValue(defaultLocationId: string): StaffFormValue {
-  return { displayName: "", role: "BARISTA", active: true, locationId: defaultLocationId };
+  return {
+    displayName: "",
+    role: "BARISTA",
+    active: true,
+    locationId: defaultLocationId,
+    locationIds: defaultLocationId ? [defaultLocationId] : [],
+  };
 }
 
-export function StaffFormModal({ open, onClose, initial, locations, onCreate, onUpdate }: StaffFormModalProps) {
+/**
+ * Default flow is a staff code + PIN — no individual work email
+ * required (product brief §6). Email/password remain available as an
+ * optional, secondary, one-time-at-creation field for anyone who wants
+ * a real login (e.g. an ADMIN), tucked under "Дополнительно" so it
+ * never reads as the normal path.
+ */
+export function StaffFormModal({
+  open,
+  onClose,
+  initial,
+  locations,
+  onCreate,
+  onUpdate,
+  onSetLocations,
+}: StaffFormModalProps) {
   const fallback = emptyValue(locations[0]?.id ?? "");
   const [value, setValue] = useState<StaffFormValue>(initial ?? fallback);
+  const [staffCode, setStaffCode] = useState("");
+  const [pin, setPin] = useState<number | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (open && (initial?.id !== value.id || (!value.id && !value.locationId && locations.length > 0))) {
+  if (open && (initial?.id !== value.id || (!value.id && value.locationIds.length === 0 && locations.length > 0))) {
     setValue(initial ?? fallback);
     if (!initial) {
+      setStaffCode("");
+      setPin(null);
       setEmail("");
       setPassword("");
+      setShowAdvanced(false);
     }
+  }
+
+  function toggleLocation(locationId: string) {
+    setValue((v) => {
+      const has = v.locationIds.includes(locationId);
+      const nextIds = has ? v.locationIds.filter((id) => id !== locationId) : [...v.locationIds, locationId];
+      const nextPrimary = v.locationId && nextIds.includes(v.locationId) ? v.locationId : (nextIds[0] ?? "");
+      return { ...v, locationIds: nextIds, locationId: nextPrimary };
+    });
   }
 
   async function handleSubmit() {
@@ -61,8 +99,8 @@ export function StaffFormModal({ open, onClose, initial, locations, onCreate, on
       setError("Укажите имя сотрудника.");
       return;
     }
-    if (!value.locationId) {
-      setError("Выберите точку.");
+    if (value.locationIds.length === 0) {
+      setError("Выберите хотя бы одну точку.");
       return;
     }
     setBusy(true);
@@ -73,25 +111,43 @@ export function StaffFormModal({ open, onClose, initial, locations, onCreate, on
           displayName: value.displayName,
           role: value.role,
           active: value.active,
-          locationId: value.locationId,
         });
+        const initialIds = [...initial.locationIds].sort().join(",");
+        const nextIds = [...value.locationIds].sort().join(",");
+        if (initialIds !== nextIds || initial.locationId !== value.locationId) {
+          await onSetLocations(initial.id, value.locationIds, value.locationId);
+        }
       } else {
-        if (!email.trim()) {
-          setError("Укажите email.");
+        if (!staffCode.trim()) {
+          setError("Укажите код сотрудника (короткий логин).");
           setBusy(false);
           return;
         }
-        if (password.length < 8) {
-          setError("Временный пароль должен быть не короче 8 символов.");
+        const pinStr = pin === null ? "" : String(pin);
+        if (!pinStr && !email.trim()) {
+          setError("Укажите PIN-код или, в разделе «Дополнительно», email и пароль.");
+          setBusy(false);
+          return;
+        }
+        if (pinStr && !/^\d{4,6}$/.test(pinStr)) {
+          setError("PIN должен состоять из 4–6 цифр.");
+          setBusy(false);
+          return;
+        }
+        if (email.trim() && password.length < 8) {
+          setError("Пароль должен быть не короче 8 символов.");
           setBusy(false);
           return;
         }
         await onCreate({
-          email: email.trim(),
-          password,
           displayName: value.displayName,
           role: value.role,
-          locationId: value.locationId,
+          locationIds: value.locationIds,
+          primaryLocationId: value.locationId,
+          staffCode: staffCode.trim(),
+          pin: pinStr || undefined,
+          email: email.trim() || undefined,
+          password: email.trim() ? password : undefined,
         });
       }
       onClose();
@@ -126,54 +182,91 @@ export function StaffFormModal({ open, onClose, initial, locations, onCreate, on
           onChange={(e) => setValue((v) => ({ ...v, displayName: e.target.value }))}
         />
       </FormField>
-      {!initial ? (
-        <>
-          <FormField label="Email" htmlFor="staff-email">
-            <input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </FormField>
-          <FormField
-            label="Временный пароль"
-            htmlFor="staff-password"
-            hint="Только для разработки — сотрудник должен сменить его при первом входе, как только появится реальная invitation-система."
-          >
-            <input
-              id="staff-password"
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Минимум 8 символов"
-            />
-          </FormField>
-        </>
-      ) : null}
-      <div className="lua-form-row">
-        <FormField label="Роль" htmlFor="staff-role">
+
+      <FormField label="Роль" htmlFor="staff-role">
+        <select id="staff-role" value={value.role} onChange={(e) => setValue((v) => ({ ...v, role: e.target.value }))}>
+          {ASSIGNABLE_ROLES.map((role) => (
+            <option key={role} value={role}>
+              {ROLE_LABEL[role] ?? role}
+            </option>
+          ))}
+        </select>
+      </FormField>
+
+      <FormField label="Точки" hint="Сотрудник может работать на одной или обеих точках.">
+        <div className="lua-form-checkbox-group">
+          {locations.map((loc) => (
+            <label key={loc.id} className="lua-form-checkbox">
+              <input
+                type="checkbox"
+                checked={value.locationIds.includes(loc.id)}
+                onChange={() => toggleLocation(loc.id)}
+              />
+              {loc.shortName}
+            </label>
+          ))}
+        </div>
+      </FormField>
+
+      {value.locationIds.length > 1 ? (
+        <FormField label="Основная точка" htmlFor="staff-primary-location">
           <select
-            id="staff-role"
-            value={value.role}
-            onChange={(e) => setValue((v) => ({ ...v, role: e.target.value }))}
-          >
-            {ASSIGNABLE_ROLES.map((role) => (
-              <option key={role} value={role}>
-                {ROLE_LABEL[role] ?? role}
-              </option>
-            ))}
-          </select>
-        </FormField>
-        <FormField label="Точка" htmlFor="staff-location">
-          <select
-            id="staff-location"
+            id="staff-primary-location"
             value={value.locationId}
             onChange={(e) => setValue((v) => ({ ...v, locationId: e.target.value }))}
           >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
+            {locations
+              .filter((loc) => value.locationIds.includes(loc.id))
+              .map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.shortName}
+                </option>
+              ))}
           </select>
         </FormField>
-      </div>
+      ) : null}
+
+      {!initial ? (
+        <>
+          <FormField label="Код сотрудника" htmlFor="staff-code" hint="Короткий логин, например AIGERIM">
+            <input
+              id="staff-code"
+              type="text"
+              value={staffCode}
+              onChange={(e) => setStaffCode(e.target.value.toUpperCase())}
+              placeholder="AIGERIM"
+            />
+          </FormField>
+          <FormField label="PIN-код" htmlFor="staff-pin" hint="4–6 цифр — сотрудник будет входить кодом и PIN">
+            <NumericInput id="staff-pin" value={pin} onChange={setPin} placeholder="4826" />
+          </FormField>
+
+          <button
+            type="button"
+            className="lua-form-advanced-toggle"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            {showAdvanced ? "Скрыть дополнительно" : "Дополнительно: вход по email"}
+          </button>
+          {showAdvanced ? (
+            <div className="lua-form-row">
+              <FormField label="Email (необязательно)" htmlFor="staff-email">
+                <input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </FormField>
+              <FormField label="Пароль" htmlFor="staff-password">
+                <input
+                  id="staff-password"
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Минимум 8 символов"
+                />
+              </FormField>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
       {initial ? (
         <label className="lua-form-checkbox">
           <input
