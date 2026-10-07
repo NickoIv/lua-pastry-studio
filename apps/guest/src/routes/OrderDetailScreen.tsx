@@ -1,5 +1,5 @@
-import { useParams } from "react-router-dom";
-import { AppHeader, Card, Money, Points, Skeleton } from "@lua/ui";
+import { useNavigate, useParams } from "react-router-dom";
+import { AppHeader, Card, ChevronLeftIcon, IconButton, Money, Points, Skeleton } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
 import { formatOrderDateTime } from "@lua/utils";
 import { useOrder } from "../data/hooks";
@@ -7,13 +7,17 @@ import "./OrderDetailScreen.css";
 
 export function OrderDetailScreen() {
   const { t, locale } = useTranslation();
+  const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const order = useOrder(orderId);
+  const backButton = (
+    <IconButton icon={<ChevronLeftIcon />} label={t("common.back")} onClick={() => navigate(-1)} />
+  );
 
   if (order.status === "loading") {
     return (
       <div className="lua-order-detail">
-        <AppHeader title={t("guest.orders.detailsTitle")} />
+        <AppHeader title={t("guest.orders.detailsTitle")} leading={backButton} />
         <Skeleton height={220} />
       </div>
     );
@@ -22,7 +26,7 @@ export function OrderDetailScreen() {
   if (order.status !== "success" || !order.data) {
     return (
       <div className="lua-order-detail">
-        <AppHeader title={t("guest.orders.detailsTitle")} />
+        <AppHeader title={t("guest.orders.detailsTitle")} leading={backButton} />
         <p className="lua-order-detail__notfound">{t("common.error")}</p>
       </div>
     );
@@ -32,7 +36,7 @@ export function OrderDetailScreen() {
 
   return (
     <div className="lua-order-detail">
-      <AppHeader title={t("guest.orders.detailsTitle")} />
+      <AppHeader title={t("guest.orders.detailsTitle")} leading={backButton} />
       <div className="lua-order-detail__body">
         <p className="lua-order-detail__date">
           {formatOrderDateTime(data.createdAt, locale)}

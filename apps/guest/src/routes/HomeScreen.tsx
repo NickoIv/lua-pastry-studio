@@ -11,7 +11,7 @@ import {
 } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
 import { resolveMediaUrl } from "@lua/config";
-import { useMenu } from "../data/hooks";
+import { useCustomerProfile, useMenu } from "../data/hooks";
 import { LoyaltyBalanceCard } from "../components/LoyaltyBalanceCard";
 import { BrandMark } from "../components/BrandMark";
 import { HeroCarousel } from "../components/HeroCarousel";
@@ -30,7 +30,11 @@ export function HomeScreen() {
   const { t, locale } = useTranslation();
   const navigate = useNavigate();
   const menu = useMenu();
+  const profile = useCustomerProfile();
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+
+  const initial =
+    profile.status === "success" && profile.data ? profile.data.firstName.charAt(0) : "";
 
   const categories =
     menu.status === "success" ? [...menu.data.categories].sort((a, b) => a.sortOrder - b.sortOrder) : [];
@@ -47,7 +51,7 @@ export function HomeScreen() {
       <div className="lua-home__topbar">
         <BrandMark />
         <IconButton
-          icon={null}
+          icon={initial}
           label={t("nav.profile")}
           variant="solid"
           className="lua-home__avatar-btn"
