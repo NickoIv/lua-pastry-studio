@@ -36,7 +36,7 @@ export function getPushSupportState(): PushSupportState {
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!("serviceWorker" in navigator)) return null;
   try {
-    return await navigator.serviceWorker.register("/sw.js");
+    return await navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
   } catch {
     return null;
   }

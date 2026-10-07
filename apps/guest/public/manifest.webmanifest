@@ -2,9 +2,9 @@
   "name": "Lua Pastry Studio",
   "short_name": "Lua",
   "description": "Меню, Lua Club и персональный QR кофейни Lua Pastry Studio",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#faf6ef",
   "theme_color": "#faf6ef",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "icons": [{ "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

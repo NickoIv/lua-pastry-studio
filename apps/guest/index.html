@@ -14,6 +14,17 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Lua — Pastry Studio</title>
+    <script>
+      // Pairs with public/404.html's GitHub Pages deep-link redirect —
+      // restores the real path before React Router ever reads it.
+      (function () {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, "", redirect);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

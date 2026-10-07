@@ -1,0 +1,49 @@
+name: Deploy Guest (client-side demo) to GitHub Pages
+
+# Publishes the Guest app in mock-data mode — no backend, no database,
+# everything runs client-side from seeded demo data. This is a sales/
+# preview build for sharing a working link, separate from the real
+# server-backed app (see docs/LOCAL-BACKEND.md for that one).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build guest app (mock mode, /lua-pastry-studio/ base path)
+        run: pnpm --filter guest build
+        env:
+          VITE_GH_PAGES: "true"
+          VITE_LUA_DATA_MODE: mock
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/guest/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

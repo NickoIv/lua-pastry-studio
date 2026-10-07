@@ -24,7 +24,7 @@ createRoot(rootElement).render(
       <I18nProvider defaultLocale="ru">
         <BackendProvider>
           <SessionProvider>
-            <BrowserRouter>
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
               <App />
             </BrowserRouter>
           </SessionProvider>
