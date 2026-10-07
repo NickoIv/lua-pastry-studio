@@ -5,7 +5,6 @@ import {
   EmptyState,
   IconButton,
   ImageSurface,
-  ProfileIcon,
   SectionHeader,
   Skeleton,
   StarIcon,
@@ -48,7 +47,7 @@ export function HomeScreen() {
       <div className="lua-home__topbar">
         <BrandMark />
         <IconButton
-          icon={<ProfileIcon />}
+          icon={null}
           label={t("nav.profile")}
           variant="solid"
           className="lua-home__avatar-btn"

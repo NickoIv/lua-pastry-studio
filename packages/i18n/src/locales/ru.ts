@@ -47,6 +47,7 @@ const ru = {
   "guest.menu.noAllergens": "Аллергены не указаны",
 
   "guest.club.title": "Lua Club",
+  "guest.club.heroSubtitle": "Больше, чем кофе. Ближе к прекрасному.",
   "guest.club.balanceLabel": "баллов на счету",
   "guest.club.tierLabel": "Уровень",
   "guest.club.rewardsTitle": "Награды за баллы",
@@ -56,8 +57,8 @@ const ru = {
   "guest.club.historyTitle": "История баллов",
   "guest.club.unavailableHere": "Недоступно в «{location}»",
   "guest.club.ringLabel": "баллов",
-  "guest.club.nextTierProgress": "{tier} через {points} баллов",
-  "guest.club.topTier": "Вы в {tier} — максимальный уровень",
+  "guest.club.nextTierLabel": "До следующего уровня",
+  "guest.club.topTierLabel": "Вы на максимальном уровне",
   "guest.club.qrCardTitle": "Ваша карта Lua Club",
   "guest.club.qrCardSubtitle": "Покажите QR на кассе, чтобы копить баллы",
   "guest.club.showQr": "Показать QR",

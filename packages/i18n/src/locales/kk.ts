@@ -50,6 +50,7 @@ const kk: Dictionary = {
   "guest.menu.noAllergens": "Аллергендер көрсетілмеген",
 
   "guest.club.title": "Lua Club",
+  "guest.club.heroSubtitle": "Кофеден де артық. Әдемілікке жақынырақ.",
   "guest.club.balanceLabel": "балл шотта",
   "guest.club.tierLabel": "Деңгей",
   "guest.club.rewardsTitle": "Баллға сыйлықтар",
@@ -59,8 +60,8 @@ const kk: Dictionary = {
   "guest.club.historyTitle": "Балл тарихы",
   "guest.club.unavailableHere": "«{location}» нүктесінде қолжетімсіз",
   "guest.club.ringLabel": "балл",
-  "guest.club.nextTierProgress": "{tier} деңгейіне {points} балл қалды",
-  "guest.club.topTier": "Сіз {tier} деңгейіндесіз — бұл ең жоғарғы деңгей",
+  "guest.club.nextTierLabel": "Келесі деңгейге дейін",
+  "guest.club.topTierLabel": "Сіз ең жоғарғы деңгейдесіз",
   "guest.club.qrCardTitle": "Сіздің Lua Club картаңыз",
   "guest.club.qrCardSubtitle": "Балл жинау үшін кассада осы QR-ды көрсетіңіз",
   "guest.club.showQr": "QR көрсету",

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import "./AppHeader.css";
 
 export interface AppHeaderProps {
-  title: string;
+  title: ReactNode;
   leading?: ReactNode;
   trailing?: ReactNode;
 }

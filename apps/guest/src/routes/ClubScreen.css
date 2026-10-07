@@ -2,8 +2,24 @@
   padding-bottom: var(--lua-space-lg);
 }
 
+.lua-club__hero {
+  margin: var(--lua-space-md) var(--lua-space-lg) 0;
+}
+
+.lua-club__hero-title {
+  margin: 0 0 var(--lua-space-2xs);
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-2xl);
+  line-height: var(--lua-leading-tight);
+}
+
+.lua-club__hero-subtitle {
+  margin: 0;
+  color: var(--lua-color-text-muted);
+}
+
 .lua-club__ring-card {
-  margin: var(--lua-space-sm) var(--lua-space-lg) 0;
+  margin: var(--lua-space-lg) var(--lua-space-lg) 0;
   display: flex;
   align-items: center;
   gap: var(--lua-space-md);
@@ -62,9 +78,20 @@
 
 .lua-club__ring-copy {
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lua-club__ring-copy-label {
   font-size: var(--lua-text-sm);
   color: var(--lua-color-text-muted);
-  line-height: var(--lua-leading-snug);
+}
+
+.lua-club__ring-copy-value {
+  font-size: var(--lua-text-md);
+  font-weight: 700;
+  color: var(--lua-color-text);
 }
 
 .lua-club__qr-card {
@@ -76,18 +103,17 @@
 
 .lua-club__qr-chip {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 6px;
   border-radius: var(--lua-radius-md);
-  background: var(--lua-color-surface-alt);
-  color: var(--lua-color-accent);
+  background: var(--lua-color-text);
 }
 .lua-club__qr-chip svg {
-  width: 24px;
-  height: 24px;
+  width: 100%;
+  height: 100%;
+  fill: var(--lua-color-surface);
+  shape-rendering: crispEdges;
 }
 
 .lua-club__qr-text {

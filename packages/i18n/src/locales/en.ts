@@ -45,6 +45,7 @@ const en: Dictionary = {
   "guest.menu.noAllergens": "No allergens listed",
 
   "guest.club.title": "Lua Club",
+  "guest.club.heroSubtitle": "More than coffee. Closer to beautiful.",
   "guest.club.balanceLabel": "points balance",
   "guest.club.tierLabel": "Tier",
   "guest.club.rewardsTitle": "Rewards",
@@ -54,8 +55,8 @@ const en: Dictionary = {
   "guest.club.historyTitle": "Points history",
   "guest.club.unavailableHere": "Unavailable at “{location}”",
   "guest.club.ringLabel": "points",
-  "guest.club.nextTierProgress": "{tier} in {points} points",
-  "guest.club.topTier": "You're at {tier} — the top tier",
+  "guest.club.nextTierLabel": "Until the next tier",
+  "guest.club.topTierLabel": "You're at the top tier",
   "guest.club.qrCardTitle": "Your Lua Club card",
   "guest.club.qrCardSubtitle": "Show this QR at checkout to earn points",
   "guest.club.showQr": "Show QR",

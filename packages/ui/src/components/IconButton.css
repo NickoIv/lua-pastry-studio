@@ -10,6 +10,15 @@
   transition: background-color var(--lua-duration-fast) var(--lua-ease-standard);
 }
 
+/* The icon SVGs (@lua/ui's icon set) ship with a viewBox but no
+   width/height attribute, so without this they have no usable
+   intrinsic size and silently don't render at all — only the button's
+   hit area shows up. */
+.lua-icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 .lua-icon-button--ghost {
   background: transparent;
   color: var(--lua-color-text);

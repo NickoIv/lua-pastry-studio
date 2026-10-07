@@ -4,11 +4,12 @@ import {
   AppHeader,
   Button,
   Card,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
   GiftIcon,
+  IconButton,
   Points,
-  QrIcon,
   SectionHeader,
   Skeleton,
   StarIcon,
@@ -17,6 +18,7 @@ import { useTranslation } from "@lua/i18n";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { ApiRequestError } from "@lua/data-server";
 import { formatPointsValue } from "@lua/utils";
+import { BrandMark } from "../components/BrandMark";
 import {
   useCustomerProfile,
   useLoyaltyAccount,
@@ -31,6 +33,41 @@ import "./ClubScreen.css";
 
 const RING_RADIUS = 42;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+/**
+ * A decorative QR-pattern (not a real scannable code — the real,
+ * single-use code only ever renders on /qr after a fresh network call,
+ * see docs/QR-SECURITY.md). This is just visual texture for the
+ * "open your card" shortcut, matching the owner's reference image.
+ */
+const DECORATIVE_QR_ROWS = [
+  "1111101011111",
+  "1000101110001",
+  "1011101010111",
+  "1011101100101",
+  "1000100011101",
+  "1111101011111",
+  "0000000000000",
+  "1011011101001",
+  "0010100100111",
+  "1111101011111",
+  "1000101101011",
+  "1011101010100",
+  "1011101100011",
+] as const;
+
+function DecorativeQr() {
+  const size = DECORATIVE_QR_ROWS.length;
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+      {DECORATIVE_QR_ROWS.flatMap((row, y) =>
+        [...row].map((cell, x) =>
+          cell === "1" ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" /> : null,
+        ),
+      )}
+    </svg>
+  );
+}
 
 export function ClubScreen() {
   const { t, locale } = useTranslation();
@@ -115,7 +152,15 @@ export function ClubScreen() {
 
   return (
     <div className="lua-club">
-      <AppHeader title={t("guest.club.title")} />
+      <AppHeader
+        title={<BrandMark />}
+        leading={<IconButton icon={<ChevronLeftIcon />} label={t("common.back")} onClick={() => navigate(-1)} />}
+      />
+
+      <div className="lua-club__hero">
+        <h1 className="lua-club__hero-title">{t("guest.club.title")}</h1>
+        <p className="lua-club__hero-subtitle">{t("guest.club.heroSubtitle")}</p>
+      </div>
 
       <Card className="lua-club__ring-card">
         {account.status === "success" && account.data ? (
@@ -137,16 +182,18 @@ export function ClubScreen() {
                 <p className="lua-club__balance-label">{t("guest.club.ringLabel")}</p>
               </div>
             </div>
-            <p className="lua-club__ring-copy">
-              {nextTier
-                ? t("guest.club.nextTierProgress", {
-                    tier: nextTier.name,
-                    points: nextTier.minLifetimePoints - lifetime,
-                  })
-                : tiers.length > 0
-                  ? t("guest.club.topTier", { tier: account.data.tier ?? tiers[tiers.length - 1]?.name ?? "" })
-                  : null}
-            </p>
+            {nextTier ? (
+              <p className="lua-club__ring-copy">
+                <span className="lua-club__ring-copy-label">{t("guest.club.nextTierLabel")}</span>
+                <span className="lua-club__ring-copy-value">
+                  <Points value={nextTier.minLifetimePoints - lifetime} locale={locale} />
+                </span>
+              </p>
+            ) : tiers.length > 0 ? (
+              <p className="lua-club__ring-copy">
+                <span className="lua-club__ring-copy-label">{t("guest.club.topTierLabel")}</span>
+              </p>
+            ) : null}
           </>
         ) : (
           <Skeleton height={120} />
@@ -154,8 +201,8 @@ export function ClubScreen() {
       </Card>
 
       <Card className="lua-club__qr-card">
-        <div className="lua-club__qr-chip" aria-hidden="true">
-          <QrIcon />
+        <div className="lua-club__qr-chip">
+          <DecorativeQr />
         </div>
         <div className="lua-club__qr-text">
           <p className="lua-club__qr-title">{t("guest.club.qrCardTitle")}</p>
