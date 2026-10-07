@@ -73,6 +73,8 @@ const availableEverywhere = [
 export const products: Product[] = [
   {
     id: asId("prod_espresso"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f6e9da%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23e3c6a2%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m1%29%22%2F%3E%3Cpath%20d%3D%22M72%2058%20L78%20105%20Q79%20114%2088%20114%20L112%20114%20Q121%20114%20122%20105%20L128%2058%20Z%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M126%2068%20Q145%2068%20145%2085%20Q145%20100%20126%2099%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22120%22%20rx%3D%2242%22%20ry%3D%227%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M88%2042%20Q84%2034%2090%2028%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M100%2042%20Q96%2032%20102%2024%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M112%2042%20Q108%2034%20114%2028%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_coffee"),
     name: { ru: "Эспрессо", kk: "Эспрессо", en: "Espresso" },
     description: {
@@ -90,6 +92,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_cappuccino"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m2%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f6e9da%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23e3c6a2%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m2%29%22%2F%3E%3Cpath%20d%3D%22M72%2058%20L78%20105%20Q79%20114%2088%20114%20L112%20114%20Q121%20114%20122%20105%20L128%2058%20Z%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M126%2068%20Q145%2068%20145%2085%20Q145%20100%20126%2099%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22120%22%20rx%3D%2242%22%20ry%3D%227%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2268%22%20r%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M100%2060%20Q106%2068%20100%2076%20Q94%2068%20100%2060%20Z%22%20fill%3D%22%234a3222%22%2F%3E%3Cpath%20d%3D%22M88%2042%20Q84%2034%2090%2028%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M100%2042%20Q96%2032%20102%2024%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M112%2042%20Q108%2034%20114%2028%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_coffee"),
     name: { ru: "Капучино", kk: "Капучино", en: "Cappuccino" },
     description: {
@@ -107,6 +111,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_latte"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m3%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f6e9da%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23e3c6a2%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m3%29%22%2F%3E%3Cpath%20d%3D%22M84%2044%20L80%20112%20Q80%20119%2087%20119%20L113%20119%20Q120%20119%20120%20112%20L116%2044%20Z%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%2244%22%20rx%3D%2216%22%20ry%3D%224.5%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22120%22%20rx%3D%2242%22%20ry%3D%227%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M85%20100%20Q100%20106%20115%20100%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M83%2085%20Q100%2092%20117%2085%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M86%2070%20Q100%2076%20114%2070%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%222.4%22%20opacity%3D%220.8%22%2F%3E%3Cpath%20d%3D%22M88%2042%20Q84%2034%2090%2028%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M100%2042%20Q96%2032%20102%2024%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M112%2042%20Q108%2034%20114%2028%22%20fill%3D%22none%22%20stroke%3D%22%234a3222%22%20stroke-width%3D%221.6%22%20opacity%3D%220.6%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_coffee"),
     name: { ru: "Латте", kk: "Латте", en: "Latte" },
     description: {
@@ -124,6 +130,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_croissant_almond"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m4%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f8edd6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ecd49e%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m4%29%22%2F%3E%3Cpath%20d%3D%22M50%2095%20Q60%2045%20100%2042%20Q140%2045%20150%2095%20Q130%2080%20112%2086%20Q122%2070%20108%2060%20Q104%2078%2090%2080%20Q94%2062%2080%2058%20Q78%2076%2066%2082%20Q68%2066%2058%2064%20Q56%2080%2050%2095%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235c4420%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2278%22%20cy%3D%2270%22%20r%3D%223%22%20fill%3D%22%238a5a26%22%2F%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%2264%22%20r%3D%223%22%20fill%3D%22%238a5a26%22%2F%3E%3Ccircle%20cx%3D%22114%22%20cy%3D%2272%22%20r%3D%223%22%20fill%3D%22%238a5a26%22%2F%3E%3Ccircle%20cx%3D%2288%22%20cy%3D%2288%22%20r%3D%223%22%20fill%3D%22%238a5a26%22%2F%3E%3Ccircle%20cx%3D%22106%22%20cy%3D%2286%22%20r%3D%223%22%20fill%3D%22%238a5a26%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_pastry"),
     name: { ru: "Круассан миндальный", kk: "Бадам круассаны", en: "Almond croissant" },
     description: {
@@ -141,6 +149,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_croissant_classic"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m5%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f8edd6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ecd49e%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m5%29%22%2F%3E%3Cpath%20d%3D%22M50%2095%20Q60%2045%20100%2042%20Q140%2045%20150%2095%20Q130%2080%20112%2086%20Q122%2070%20108%2060%20Q104%2078%2090%2080%20Q94%2062%2080%2058%20Q78%2076%2066%2082%20Q68%2066%2058%2064%20Q56%2080%2050%2095%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235c4420%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_pastry"),
     name: {
       ru: "Круассан классический",
@@ -162,6 +172,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_mille_feuille"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m6%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3e1e6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dcb8c4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m6%29%22%2F%3E%3Cpath%20d%3D%22M100%2038%20L145%20108%20Q100%20122%2055%20108%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M92.65%2055.5%20Q100%2061.5%20107.35%2055.5%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M85.3%2073.0%20Q100%2079.0%20114.7%2073.0%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M77.95%2090.5%20Q100%2096.5%20122.05%2090.5%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_dessert"),
     name: { ru: "Мильфей", kk: "Мильфей", en: "Mille-feuille" },
     description: {
@@ -179,6 +191,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_raspberry_tart"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m7%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3e1e6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dcb8c4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m7%29%22%2F%3E%3Cpath%20d%3D%22M48%2092%20Q48%20108%20100%20108%20Q152%20108%20152%2092%20L146%2060%20Q100%2048%2054%2060%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M54%2060%20Q100%2048%20146%2060%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%2278%22%20cy%3D%2274%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2268%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%22122%22%20cy%3D%2274%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%2286%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%22112%22%20cy%3D%2286%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_dessert"),
     name: { ru: "Тарт с малиной", kk: "Таңқурай тарты", en: "Raspberry tart" },
     description: {
@@ -196,6 +210,8 @@ export const products: Product[] = [
   },
   {
     id: asId("prod_petit_prince"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m8%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3e1e6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dcb8c4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m8%29%22%2F%3E%3Cpath%20d%3D%22M58%20108%20Q58%2058%20100%2055%20Q142%2058%20142%20108%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22110%22%20rx%3D%2252%22%20ry%3D%228%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M78%2072%20Q84%2062%2096%2060%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%221.4%22%20opacity%3D%220.5%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2258%22%20r%3D%226%22%20fill%3D%22%238a5a26%22%2F%3E%3C%2Fsvg%3E",
     categoryId: asId("cat_dessert"),
     name: {
       ru: "Десерт «Маленький принц»",
@@ -220,6 +236,8 @@ export const products: Product[] = [
 export const collections: Collection[] = [
   {
     id: asId("col_book"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m9%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3e1e6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dcb8c4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m9%29%22%2F%3E%3Crect%20x%3D%2252%22%20y%3D%2292%22%20width%3D%2296%22%20height%3D%2214%22%20rx%3D%222%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Crect%20x%3D%2262%22%20y%3D%2280%22%20width%3D%2276%22%20height%3D%2212%22%20rx%3D%222%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M78%2080%20Q78%2052%20100%2050%20Q122%2052%20122%2080%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2248%22%20r%3D%225%22%20fill%3D%22%238a5a26%22%2F%3E%3C%2Fsvg%3E",
     name: {
       ru: "The Book Collection",
       kk: "The Book Collection",
@@ -235,6 +253,8 @@ export const collections: Collection[] = [
   },
   {
     id: asId("col_autumn"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m10%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f8e3c9%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23eab676%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m10%29%22%2F%3E%3Cpath%20d%3D%22M48%2092%20Q48%20108%20100%20108%20Q152%20108%20152%2092%20L146%2060%20Q100%2048%2054%2060%20Z%22%20fill%3D%22none%22%20stroke%3D%22%237a3b12%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M54%2060%20Q100%2048%20146%2060%22%20fill%3D%22none%22%20stroke%3D%22%237a3b12%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M100%2044%20Q112%2030%20126%2038%20Q118%2050%20106%2050%20Q98%2050%20100%2044%20Z%22%20fill%3D%22%23c9601f%22%20stroke%3D%22%237a3b12%22%20stroke-width%3D%221.2%22%2F%3E%3Ccircle%20cx%3D%2282%22%20cy%3D%2278%22%20r%3D%225%22%20fill%3D%22%23c9601f%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2278%22%20r%3D%225%22%20fill%3D%22%23c9601f%22%2F%3E%3Ccircle%20cx%3D%22118%22%20cy%3D%2278%22%20r%3D%225%22%20fill%3D%22%23c9601f%22%2F%3E%3C%2Fsvg%3E",
     name: { ru: "Осенняя коллекция", kk: "Күз коллекциясы", en: "Autumn collection" },
     description: {
       ru: "Сезонные вкусы: малина, орех и карамель.",
@@ -248,6 +268,8 @@ export const collections: Collection[] = [
   },
   {
     id: asId("col_must_try"),
+    imageUrl:
+      "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22m11%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3e1e6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dcb8c4%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22url%28%23m11%29%22%2F%3E%3Cpath%20d%3D%22M48%2092%20Q48%20108%20100%20108%20Q152%20108%20152%2092%20L146%2060%20Q100%2048%2054%2060%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Cpath%20d%3D%22M54%2060%20Q100%2048%20146%2060%22%20fill%3D%22none%22%20stroke%3D%22%235a2f3d%22%20stroke-width%3D%222.4%22%2F%3E%3Ccircle%20cx%3D%2278%22%20cy%3D%2274%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2268%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%22122%22%20cy%3D%2274%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%2286%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3Ccircle%20cx%3D%22112%22%20cy%3D%2286%22%20r%3D%225%22%20fill%3D%22%23a23b52%22%2F%3E%3C%2Fsvg%3E",
     name: { ru: "Must Try", kk: "Міндетті түрде көру керек", en: "Must Try" },
     productIds: [
       asId("prod_cappuccino"),
