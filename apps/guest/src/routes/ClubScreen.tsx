@@ -2,20 +2,25 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AppHeader,
-  Badge,
   Button,
   Card,
+  ChevronRightIcon,
+  ClockIcon,
   GiftIcon,
   Points,
+  QrIcon,
   SectionHeader,
   Skeleton,
+  StarIcon,
 } from "@lua/ui";
 import { useTranslation } from "@lua/i18n";
 import { API_ERROR_MESSAGES_RU } from "@lua/types";
 import { ApiRequestError } from "@lua/data-server";
+import { formatPointsValue } from "@lua/utils";
 import {
   useCustomerProfile,
   useLoyaltyAccount,
+  useLoyaltyProgram,
   useLoyaltyTransactions,
   useLocations,
   useMenu,
@@ -24,10 +29,14 @@ import {
 } from "../data/hooks";
 import "./ClubScreen.css";
 
+const RING_RADIUS = 42;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 export function ClubScreen() {
   const { t, locale } = useTranslation();
   const navigate = useNavigate();
   const account = useLoyaltyAccount();
+  const program = useLoyaltyProgram();
   const rewards = useRewards();
   const transactions = useLoyaltyTransactions();
   const requestRedemption = useRequestRedemption();
@@ -39,6 +48,22 @@ export function ClubScreen() {
 
   const balance =
     account.status === "success" && account.data ? account.data.pointsBalance : null;
+  const lifetime =
+    account.status === "success" && account.data ? account.data.lifetimePointsEarned : 0;
+  const tiers =
+    program.status === "success" && program.data
+      ? [...(program.data.tiers ?? [])].sort((a, b) => a.minLifetimePoints - b.minLifetimePoints)
+      : [];
+  const nextTier = tiers.find((tier) => tier.minLifetimePoints > lifetime);
+  const currentTierFloor =
+    [...tiers].reverse().find((tier) => tier.minLifetimePoints <= lifetime)?.minLifetimePoints ?? 0;
+  const ringProgress = nextTier
+    ? Math.min(
+        1,
+        Math.max(0, (lifetime - currentTierFloor) / (nextTier.minLifetimePoints - currentTierFloor || 1)),
+      )
+    : 1;
+  const birthdayBonusPoints = program.status === "success" ? program.data?.birthdayBonusPoints : undefined;
 
   const selectedLocationId =
     profile.status === "success" && profile.data?.homeLocationId
@@ -92,21 +117,88 @@ export function ClubScreen() {
     <div className="lua-club">
       <AppHeader title={t("guest.club.title")} />
 
-      <Card className="lua-club__balance-card">
+      <Card className="lua-club__ring-card">
         {account.status === "success" && account.data ? (
           <>
-            <p className="lua-club__balance">
-              <Points value={account.data.pointsBalance} locale={locale} />
+            <div className="lua-club__ring">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle className="lua-club__ring-track" cx="50" cy="50" r={RING_RADIUS} />
+                <circle
+                  className="lua-club__ring-progress"
+                  cx="50"
+                  cy="50"
+                  r={RING_RADIUS}
+                  strokeDasharray={RING_CIRCUMFERENCE}
+                  strokeDashoffset={RING_CIRCUMFERENCE * (1 - ringProgress)}
+                />
+              </svg>
+              <div className="lua-club__ring-center">
+                <p className="lua-club__balance">{formatPointsValue(account.data.pointsBalance, locale)}</p>
+                <p className="lua-club__balance-label">{t("guest.club.ringLabel")}</p>
+              </div>
+            </div>
+            <p className="lua-club__ring-copy">
+              {nextTier
+                ? t("guest.club.nextTierProgress", {
+                    tier: nextTier.name,
+                    points: nextTier.minLifetimePoints - lifetime,
+                  })
+                : tiers.length > 0
+                  ? t("guest.club.topTier", { tier: account.data.tier ?? tiers[tiers.length - 1]?.name ?? "" })
+                  : null}
             </p>
-            <p className="lua-club__balance-label">{t("guest.club.balanceLabel")}</p>
-            <Badge tone="accent">{account.data.tier ?? "Lua"}</Badge>
           </>
         ) : (
-          <Skeleton height={64} />
+          <Skeleton height={120} />
         )}
       </Card>
 
-      <div className="lua-club__birthday-banner">{t("guest.club.birthdayBanner")}</div>
+      <Card className="lua-club__qr-card">
+        <div className="lua-club__qr-chip" aria-hidden="true">
+          <QrIcon />
+        </div>
+        <div className="lua-club__qr-text">
+          <p className="lua-club__qr-title">{t("guest.club.qrCardTitle")}</p>
+          <p className="lua-club__qr-subtitle">{t("guest.club.qrCardSubtitle")}</p>
+          <Button size="md" variant="secondary" onClick={() => navigate("/qr")}>
+            {t("guest.club.showQr")}
+          </Button>
+        </div>
+      </Card>
+
+      <section className="lua-club__section">
+        <SectionHeader title={t("guest.club.privilegesTitle")} />
+        <div className="lua-club__privileges">
+          <div className="lua-club__privilege">
+            <span className="lua-club__privilege-icon">
+              <GiftIcon />
+            </span>
+            <span className="lua-club__privilege-text">
+              {t("guest.club.privilegeBirthday")}
+              {birthdayBonusPoints ? (
+                <span className="lua-club__privilege-detail">
+                  {t("guest.club.privilegeBirthdayDetail", { points: birthdayBonusPoints })}
+                </span>
+              ) : null}
+            </span>
+            <ChevronRightIcon className="lua-club__privilege-chevron" />
+          </div>
+          <div className="lua-club__privilege">
+            <span className="lua-club__privilege-icon">
+              <ClockIcon />
+            </span>
+            <span className="lua-club__privilege-text">{t("guest.club.privilegeEarlyAccess")}</span>
+            <ChevronRightIcon className="lua-club__privilege-chevron" />
+          </div>
+          <div className="lua-club__privilege">
+            <span className="lua-club__privilege-icon">
+              <StarIcon />
+            </span>
+            <span className="lua-club__privilege-text">{t("guest.club.privilegeSurprises")}</span>
+            <ChevronRightIcon className="lua-club__privilege-chevron" />
+          </div>
+        </div>
+      </section>
 
       <section className="lua-club__section">
         <SectionHeader title={t("guest.club.rewardsTitle")} />

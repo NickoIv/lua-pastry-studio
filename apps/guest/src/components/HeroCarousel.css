@@ -1,0 +1,84 @@
+.lua-hero-carousel {
+  position: relative;
+}
+
+.lua-hero-carousel__track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 0;
+  border-radius: var(--lua-radius-xl);
+  scrollbar-width: none;
+}
+.lua-hero-carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+.lua-hero-carousel__slide {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--lua-radius-xl);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--lua-space-md);
+}
+
+.lua-hero-carousel__image {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  border: none;
+}
+
+.lua-hero-carousel__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(37, 27, 22, 0) 45%, rgba(37, 27, 22, 0.75) 100%);
+}
+
+.lua-hero-carousel__text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--lua-color-text-on-accent);
+}
+
+.lua-hero-carousel__slide--placeholder .lua-hero-carousel__text {
+  color: var(--lua-color-accent-soft-text);
+}
+
+.lua-hero-carousel__text strong {
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-lg);
+  font-weight: 500;
+  line-height: var(--lua-leading-snug);
+}
+
+.lua-hero-carousel__text span {
+  font-size: var(--lua-text-sm);
+  opacity: 0.9;
+}
+
+.lua-hero-carousel__dots {
+  position: absolute;
+  top: var(--lua-space-sm);
+  right: var(--lua-space-sm);
+  display: flex;
+  gap: 4px;
+}
+
+.lua-hero-carousel__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--lua-radius-pill);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.lua-hero-carousel__dot--active {
+  width: 14px;
+  background: #fff;
+}

@@ -37,6 +37,16 @@ export function useLoyaltyAccount() {
   }, [backend, session]);
 }
 
+/** Tier thresholds for the Club screen's progress ring — kept server-driven rather than hardcoded, since an ADMIN can retune `loyalty_programs.tiers`. */
+export function useLoyaltyProgram() {
+  const backend = useBackend();
+  const { session } = useSession();
+  return useAsync(async () => {
+    if (isServerMode) return session ? apiClient.getLoyaltyProgram() : null;
+    return backend.store.loyaltyProgram;
+  }, [backend, session]);
+}
+
 export function useLoyaltyTransactions() {
   const backend = useBackend();
   const { session } = useSession();

@@ -1,0 +1,45 @@
+.lua-product-row__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.lua-product-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lua-space-sm);
+}
+
+.lua-product-row__thumb {
+  width: 56px;
+  flex-shrink: 0;
+  border-radius: var(--lua-radius-md);
+  overflow: hidden;
+}
+
+.lua-product-row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.lua-product-row__name {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--lua-text-sm);
+}
+
+.lua-product-row__desc {
+  margin: 2px 0 0;
+  color: var(--lua-color-text-muted);
+  font-size: var(--lua-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lua-product-row__price {
+  flex-shrink: 0;
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--lua-text-sm);
+}

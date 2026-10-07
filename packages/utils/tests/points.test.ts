@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPoints, formatPointsSigned } from "../src/points";
+import { formatPoints, formatPointsSigned, formatPointsValue } from "../src/points";
 
 const NON_BREAKING_SPACES = new RegExp(
   `[${String.fromCharCode(0x00a0)}${String.fromCharCode(0x202f)}]`,
@@ -22,6 +22,13 @@ describe("formatPoints (ru pluralization)", () => {
     expect(formatted).toBe("3 288 баллов");
     expect(formatPoints(11)).toContain("баллов");
     expect(formatPoints(0)).toContain("баллов");
+  });
+});
+
+describe("formatPointsValue (no unit word, for labelled contexts like a progress ring)", () => {
+  it("formats the number without appending баллов/балла/балл", () => {
+    const formatted = formatPointsValue(3288).replace(NON_BREAKING_SPACES, " ");
+    expect(formatted).toBe("3 288");
   });
 });
 

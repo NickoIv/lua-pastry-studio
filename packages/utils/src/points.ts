@@ -18,6 +18,11 @@ const NUMBER_LOCALE: Record<LocaleCode, string> = {
   en: "en-US",
 };
 
+/** The bare formatted number, with no "points" word — for contexts (like a progress ring) that label the unit separately. */
+export function formatPointsValue(points: number, locale: LocaleCode = "ru"): string {
+  return new Intl.NumberFormat(NUMBER_LOCALE[locale]).format(points);
+}
+
 export function formatPoints(points: number, locale: LocaleCode = "ru"): string {
   const abs = Math.abs(points);
   const formattedNumber = new Intl.NumberFormat(NUMBER_LOCALE[locale]).format(points);

@@ -1,0 +1,22 @@
+.lua-brand-mark {
+  margin: 0;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.lua-brand-mark__logo {
+  display: block;
+  font-family: var(--lua-font-serif);
+  font-size: var(--lua-text-lg);
+  font-weight: 500;
+}
+
+.lua-brand-mark__caption {
+  display: block;
+  font-size: var(--lua-text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lua-color-text-faint);
+  margin-top: 1px;
+}
