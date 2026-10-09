@@ -32,6 +32,10 @@ Terminal window. (First time only, macOS may ask you to confirm you
 want to run it — that's normal for any script downloaded/created
 locally.)
 
+To open the management panel directly, double-click **`Открыть Lua
+Admin.command`** instead. It starts Lua if needed, waits until it is
+ready, then opens Admin in your default browser.
+
 If something looks wrong before you even start, run `pnpm demo:doctor`
 first — it checks everything without changing anything and tells you
 exactly what to fix.
