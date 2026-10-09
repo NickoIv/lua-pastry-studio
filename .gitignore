@@ -37,3 +37,7 @@ packages/server/uploads
 
 # pnpm demo:* launcher's own PID tracking + logs — see scripts/demo/.
 .runtime
+
+# Local native wrapper created by scripts/macos/build-launcher.sh. The
+# source and builder are versioned; the Mac-specific compiled app is not.
+Lua Platform.app

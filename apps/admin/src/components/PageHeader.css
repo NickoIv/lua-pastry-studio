@@ -11,3 +11,19 @@
   font-family: var(--lua-font-serif);
   font-size: var(--lua-text-2xl);
 }
+
+@media (max-width: 480px) {
+  .lua-page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: var(--lua-space-lg);
+  }
+
+  .lua-page-header__title {
+    font-size: var(--lua-text-xl);
+  }
+
+  .lua-page-header > .lua-button {
+    width: 100%;
+  }
+}

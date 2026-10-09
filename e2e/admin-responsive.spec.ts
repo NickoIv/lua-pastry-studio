@@ -28,3 +28,25 @@ test("staff table action buttons remain reachable (not clipped) at 1024px", asyn
   expect(box).not.toBeNull();
   expect(box!.x + box!.width).toBeLessThanOrEqual(1024);
 });
+
+test("Admin remains usable for editing on an iPhone-sized screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await adminLogin(page);
+  await page.goto(`${ADMIN_URL}/menu`);
+  await page.waitForLoadState("networkidle");
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, "the Admin page itself must not scroll sideways on an iPhone").toBeLessThanOrEqual(1);
+
+  const navItem = page.locator(".lua-admin-shell__nav-item").first();
+  const navBox = await navItem.boundingBox();
+  expect(navBox).not.toBeNull();
+  expect(navBox!.height, "mobile navigation must retain a touch-friendly target").toBeGreaterThanOrEqual(44);
+
+  const addProduct = page.getByRole("button", { name: "Товар", exact: true });
+  await expect(addProduct).toBeVisible();
+  await addProduct.click();
+  await expect(page.locator(".lua-modal")).toBeVisible();
+  const modalOverflow = await page.locator(".lua-modal").evaluate((element) => element.scrollWidth - element.clientWidth);
+  expect(modalOverflow, "product editor must fit the phone viewport").toBeLessThanOrEqual(1);
+});

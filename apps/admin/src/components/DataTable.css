@@ -44,3 +44,17 @@
 .lua-data-table__cell--right {
   text-align: right;
 }
+
+@media (max-width: 480px) {
+  .lua-data-table__scroll {
+    margin-inline: calc(var(--lua-space-md) * -1);
+    border-radius: 0;
+    border-inline: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lua-data-table th,
+  .lua-data-table td {
+    padding: var(--lua-space-sm);
+  }
+}

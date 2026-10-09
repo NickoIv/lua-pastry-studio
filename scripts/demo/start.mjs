@@ -86,7 +86,9 @@ async function startApi() {
     console.log(fail(`[demo:start] port ${PORTS.api} is used by another process — not starting a second API`));
     return false;
   } else {
-    spawnService("api", "pnpm", ["--filter", "@lua/server", "start"]);
+    spawnService("api", "./node_modules/.bin/tsx", ["src/index.ts"], {
+      cwd: path.join(REPO_ROOT, "packages/server"),
+    });
   }
   const healthy = await waitForHttpOk(`http://127.0.0.1:${PORTS.api}/health`, { timeoutMs: 25_000 });
   if (!healthy) {
@@ -107,7 +109,9 @@ async function startFrontend(name, port) {
     console.log(fail(`[demo:start] port ${port} is used by another process — not starting ${name}`));
     return false;
   }
-  spawnService(name, "pnpm", ["--filter", `@lua/${name}`, "dev"]);
+  spawnService(name, "./node_modules/.bin/vite", ["--port", String(port)], {
+    cwd: path.join(REPO_ROOT, `apps/${name}`),
+  });
   const up = await waitForHttpOk(`http://127.0.0.1:${port}/`, { timeoutMs: 20_000 });
   if (!up) {
     console.log(fail(`[demo:start] ${name} did not come up in time — see .runtime/logs/${name}.log`));
@@ -159,8 +163,11 @@ async function main() {
   if (lanIp) {
     console.log(bold("Guest on your phone (same Wi-Fi):"));
     console.log(`  http://${lanIp}:${PORTS.guest}`);
+    console.log();
+    console.log(bold("Admin on your phone (same Wi-Fi):"));
+    console.log(`  http://${lanIp}:${PORTS.admin}`);
   } else {
-    console.log(warn("Guest on your phone: no LAN IP detected — connect the Mac to Wi-Fi/Ethernet and re-run."));
+    console.log(warn("Phone access: no LAN IP detected — connect the Mac to Wi-Fi/Ethernet and re-run."));
   }
   console.log();
   console.log(bold("Backend:"));

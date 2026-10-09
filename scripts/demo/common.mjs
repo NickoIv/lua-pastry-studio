@@ -83,7 +83,15 @@ export function isPidAlive(pid) {
     process.kill(pid, 0);
     return true;
   } catch {
-    return false;
+    try {
+      // pnpm may hand its dev server to a child and exit itself. Each
+      // launcher-owned service starts detached, so its process group still
+      // identifies that child safely even when the original PID is gone.
+      process.kill(-pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -166,12 +174,12 @@ export function runSync(cmd, args) {
  * terminal) can find and stop exactly this process — never anything
  * this project didn't start itself.
  */
-export function spawnService(name, command, args) {
+export function spawnService(name, command, args, { cwd = REPO_ROOT } = {}) {
   ensureRuntimeDir();
   const logPath = path.join(LOG_DIR, `${name}.log`);
   const fd = openSync(logPath, "w"); // overwrite each start — see docs/TEST-LUA-LOCALLY.md "Logs"
   const child = spawn(command, args, {
-    cwd: REPO_ROOT,
+    cwd,
     detached: true,
     stdio: ["ignore", fd, fd],
     env: process.env,

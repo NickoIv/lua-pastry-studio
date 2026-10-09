@@ -26,15 +26,13 @@ anything except your own local test session.
    time you run this it can take up to a minute; after that it's a few
    seconds.
 
-Prefer clicking instead of typing? Double-click **`Start Lua.command`**
-in the project folder in Finder — it does the same thing in its own
-Terminal window. (First time only, macOS may ask you to confirm you
-want to run it — that's normal for any script downloaded/created
-locally.)
+For normal daily use, double-click **`Lua Platform.app`** in the project
+folder in Finder. It starts Lua if needed and opens Admin in its own
+application window. Closing that window also safely stops the local Lua
+services. This is the one file you need to use.
 
-To open the management panel directly, double-click **`Открыть Lua
-Admin.command`** instead. It starts Lua if needed, waits until it is
-ready, then opens Admin in your default browser.
+`Start Lua.command` and `Stop Lua.command` remain available only as
+technical alternatives for development and troubleshooting.
 
 If something looks wrong before you even start, run `pnpm demo:doctor`
 first — it checks everything without changing anything and tells you
@@ -59,6 +57,18 @@ Admin:
 Copy each address into a browser tab (Safari or Chrome both work), or
 run `pnpm demo:open` to have Terminal open all three for you
 automatically.
+
+### Editing from an iPhone
+
+After Lua has started, connect the iPhone and Mac to the same Wi-Fi.
+The startup window prints an **Admin on your phone** address, such as
+`http://192.168.1.42:5175`. Open that exact address in Safari and sign
+in as an Admin. It is the same real Admin panel: you can change prices,
+product details, availability and images directly from the phone.
+
+Keep the Mac and the Lua Platform window open while editing. Closing
+Lua Platform stops its local services, so the phone address will no
+longer be available — this is intentional.
 
 ## SECTION C — Test Guest (the customer app)
 

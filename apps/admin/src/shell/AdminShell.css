@@ -102,19 +102,53 @@
     width: 100%;
     height: auto;
     position: static;
-    padding: var(--lua-space-md);
+    padding: var(--lua-space-sm) var(--lua-space-md) var(--lua-space-md);
+  }
+  .lua-admin-shell__wordmark,
+  .lua-admin-shell__subtitle,
+  .lua-admin-shell__account {
+    display: none;
   }
   .lua-admin-shell__nav {
     flex-direction: row;
+    gap: var(--lua-space-xs);
     overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
-  .lua-admin-shell__nav-item {
-    flex-shrink: 0;
-  }
-  .lua-admin-shell__nav-item span {
+  .lua-admin-shell__nav::-webkit-scrollbar {
     display: none;
   }
+  .lua-admin-shell__nav-item {
+    min-height: var(--lua-touch-target);
+    padding: var(--lua-space-xs) var(--lua-space-sm);
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+  .lua-admin-shell__nav-item span {
+    display: inline;
+  }
   .lua-admin-shell__content {
-    padding: var(--lua-space-lg);
+    padding: var(--lua-space-lg) var(--lua-space-md) calc(var(--lua-space-xl) + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  .lua-admin-shell__sidebar {
+    position: sticky;
+    z-index: var(--lua-z-sticky);
+    top: 0;
+    padding-top: calc(var(--lua-space-sm) + env(safe-area-inset-top));
+  }
+  .lua-admin-shell__nav-item {
+    font-size: var(--lua-text-xs);
+  }
+  .lua-admin-shell__nav-item svg {
+    width: 16px;
+    height: 16px;
+  }
+  .lua-admin-shell__content {
+    padding-top: var(--lua-space-md);
   }
 }
