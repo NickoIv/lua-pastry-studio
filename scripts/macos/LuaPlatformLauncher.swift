@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import WebKit
 
 @main
@@ -25,6 +26,7 @@ final class LuaPlatformLauncher: NSObject, NSApplicationDelegate, NSWindowDelega
   func applicationDidFinishLaunching(_ notification: Notification) {
     saveLauncherLog(command: "launcher", output: "Started from \(projectDirectory.path)")
     NSApp.setActivationPolicy(.regular)
+    configureApplicationMenu()
     showStartupWindow()
     startLua()
   }
@@ -133,9 +135,75 @@ final class LuaPlatformLauncher: NSObject, NSApplicationDelegate, NSWindowDelega
         webView.autoresizingMask = [.width, .height]
         self.webView = webView
         self.window.contentView = webView
+        if let phoneURL = self.phoneAdminURL() {
+          self.window.title = "Lua Pastry Studio — Admin · iPhone: \(phoneURL)"
+        }
         webView.load(URLRequest(url: self.adminURL))
       }
     }
+  }
+
+  private func configureApplicationMenu() {
+    let mainMenu = NSMenu()
+    let applicationItem = NSMenuItem()
+    let applicationMenu = NSMenu()
+
+    let copyPhoneAddress = NSMenuItem(
+      title: "Скопировать адрес Admin для iPhone",
+      action: #selector(copyPhoneAddressToClipboard),
+      keyEquivalent: ""
+    )
+    copyPhoneAddress.target = self
+    applicationMenu.addItem(copyPhoneAddress)
+    applicationMenu.addItem(.separator())
+    applicationMenu.addItem(withTitle: "Закрыть Lua Platform", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+
+    applicationItem.submenu = applicationMenu
+    mainMenu.addItem(applicationItem)
+    NSApp.mainMenu = mainMenu
+  }
+
+  @objc private func copyPhoneAddressToClipboard() {
+    guard let phoneURL = phoneAdminURL() else { return }
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(phoneURL, forType: .string)
+  }
+
+  private func phoneAdminURL() -> String? {
+    guard let address = lanIPv4Address() else { return nil }
+    return "http://\(address):5175"
+  }
+
+  private func lanIPv4Address() -> String? {
+    var interfaces: UnsafeMutablePointer<ifaddrs>?
+    guard getifaddrs(&interfaces) == 0, let first = interfaces else { return nil }
+    defer { freeifaddrs(interfaces) }
+
+    var fallback: String?
+    for pointer in sequence(first: first, next: { $0.pointee.ifa_next }) {
+      let interface = pointer.pointee
+      guard let address = interface.ifa_addr, address.pointee.sa_family == UInt8(AF_INET) else { continue }
+      let name = String(cString: interface.ifa_name)
+      guard name != "lo0" else { continue }
+
+      var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+      let result = getnameinfo(
+        address,
+        socklen_t(address.pointee.sa_len),
+        &hostname,
+        socklen_t(hostname.count),
+        nil,
+        0,
+        NI_NUMERICHOST
+      )
+      guard result == 0 else { continue }
+      let ip = String(cString: hostname)
+      guard !ip.hasPrefix("169.254.") else { continue }
+      if name == "en0" || name == "en1" { return ip }
+      fallback = fallback ?? ip
+    }
+
+    return fallback
   }
 
   @discardableResult
