@@ -20,14 +20,26 @@ final class LuaPlatformLauncher: NSObject, NSApplicationDelegate, NSWindowDelega
   private var lastCommandOutput = ""
 
   private var projectDirectory: URL {
-    // project-path.txt is written by build-launcher.sh with the absolute
-    // path at build time, so the app works from any location (Desktop, Dock).
+    // 1. Embedded absolute path written by build-launcher.sh — works on the
+    //    build machine even when the app lives in a different folder.
     if let pathFile = Bundle.main.url(forResource: "project-path", withExtension: "txt"),
-       let stored = try? String(contentsOf: pathFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+       let stored = try? String(contentsOf: pathFile, encoding: .utf8)
+         .trimmingCharacters(in: .whitespacesAndNewlines),
        !stored.isEmpty {
-      return URL(fileURLWithPath: stored)
+      let url = URL(fileURLWithPath: stored)
+      if FileManager.default.fileExists(atPath: url.appendingPathComponent("package.json").path) {
+        return url
+      }
     }
-    return Bundle.main.bundleURL.deletingLastPathComponent()
+    // 2. Relative fallback — handles "moved to new Mac" after project is
+    //    copied alongside this app or one folder up.
+    let appParent = Bundle.main.bundleURL.deletingLastPathComponent()
+    for candidate in [appParent, appParent.deletingLastPathComponent()] {
+      if FileManager.default.fileExists(atPath: candidate.appendingPathComponent("package.json").path) {
+        return candidate
+      }
+    }
+    return appParent
   }
 
   func applicationDidFinishLaunching(_ notification: Notification) {
