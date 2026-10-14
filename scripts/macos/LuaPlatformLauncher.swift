@@ -20,7 +20,14 @@ final class LuaPlatformLauncher: NSObject, NSApplicationDelegate, NSWindowDelega
   private var lastCommandOutput = ""
 
   private var projectDirectory: URL {
-    Bundle.main.bundleURL.deletingLastPathComponent()
+    // project-path.txt is written by build-launcher.sh with the absolute
+    // path at build time, so the app works from any location (Desktop, Dock).
+    if let pathFile = Bundle.main.url(forResource: "project-path", withExtension: "txt"),
+       let stored = try? String(contentsOf: pathFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+       !stored.isEmpty {
+      return URL(fileURLWithPath: stored)
+    }
+    return Bundle.main.bundleURL.deletingLastPathComponent()
   }
 
   func applicationDidFinishLaunching(_ notification: Notification) {

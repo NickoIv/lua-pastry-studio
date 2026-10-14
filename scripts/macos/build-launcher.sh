@@ -46,4 +46,13 @@ swiftc \
   "$PROJECT_DIR/scripts/macos/LuaPlatformLauncher.swift" \
   -o "$MACOS_DIR/LuaPlatformLauncher"
 
-echo "Built: $APP_DIR"
+# Embed the absolute project path so the app works from any location
+# (Desktop, Dock, Launchpad) — not just from inside the project folder.
+echo -n "$PROJECT_DIR" > "$RESOURCES_DIR/project-path.txt"
+
+DESKTOP="$HOME/Desktop"
+DEST="$DESKTOP/Lua Platform.app"
+rm -rf "$DEST"
+cp -R "$APP_DIR" "$DEST"
+
+echo "Built and copied to: $DEST"
